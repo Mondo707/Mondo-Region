@@ -1,0 +1,25 @@
+{
+  "name": "mondo-region",
+  "version": "1.0.0",
+  "description": "Mondo Region - viloyat filiallari uchun boshqaruv tizimi (Poster POS integratsiyasi bilan)",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js",
+    "test": "node test/run-tests.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "connect-pg-simple": "^9.0.1",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-async-errors": "^3.1.1",
+    "express-session": "^1.18.0",
+    "node-fetch": "^2.7.0",
+    "pg": "^8.11.5",
+    "xlsx": "^0.18.5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

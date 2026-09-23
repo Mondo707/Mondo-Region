@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kassa kiritish — Mondo Region</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="assets/logo.png">
+</head>
+<body>
+<div class="app-shell">
+  <div class="sidebar" id="sidebar-root"></div>
+  <div class="main">
+    <div class="page-title">Kunlik kassa</div>
+    <div class="page-sub" id="date-sub"></div>
+
+    <div style="display:flex;gap:24px;align-items:flex-start;">
+      <div style="flex:1;">
+        <div class="card" style="margin-bottom:16px;">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px;">Kupyuralar</div>
+          <div class="grid-4" id="denom-grid"></div>
+        </div>
+
+        <div class="card">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px;">To'lov turlari</div>
+          <div id="payment-rows" style="display:flex;flex-direction:column;gap:10px;"></div>
+          <div style="margin-top:12px;">
+            <a href="admin.html#payment-types" class="btn-link">+ To'lov turini boshqarish (admin panel)</a>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+          <label>Inkassatsiya (bo'lsa)</label>
+          <input type="number" id="inkassatsiya" min="0" step="1" placeholder="0">
+        </div>
+      </div>
+
+      <div style="flex:1;">
+        <div class="card" style="margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #efeee8;"><span style="color:var(--muted);font-size:13.5px;">Тоза (naqd)</span>
+            <input type="number" id="toza-naqd" min="0" step="1" style="width:140px;text-align:right;padding:6px 8px;">
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #efeee8;">
+            <span style="font-size:13.5px;color:var(--muted);">Rasxod (avtomatik)</span>
+            <span style="font-size:13.5px;font-weight:600;" id="rasxod-val">0</span>
+          </div>
+          <div style="font-size:11px;color:#8b8a97;padding:0 0 6px 0;">Xarajatlar + Bozorlik yozuvlaridan yig'ildi</div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #efeee8;"><span style="font-size:13.5px;color:var(--muted);">Безналичные (kartalar)</span><span style="font-size:13.5px;font-weight:600;" id="card-val">0</span></div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;"><span style="font-size:13.5px;color:var(--muted);">Сертификат</span><span style="font-size:13.5px;font-weight:600;" id="cert-val">0</span></div>
+        </div>
+
+        <div class="kpi-dark" style="margin-bottom:16px;">
+          <div class="kpi-label">Umumiy kassa (JAMI)</div>
+          <div class="kpi-value" style="font-size:30px;" id="jami-val">0 so'm</div>
+        </div>
+
+        <div id="lock-box" class="card" style="display:none;align-items:center;gap:12px;flex-direction:row;">
+          <div style="width:36px;height:36px;border-radius:10px;background:var(--amber-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;">⏳</div>
+          <div>
+            <div style="font-size:13.5px;font-weight:600;">Poster bilan solishtirish 6 soatdan keyin</div>
+            <div style="font-size:12px;color:var(--muted);">Firibgarlikning oldini olish uchun natija vaqtinchalik qulflangan</div>
+          </div>
+        </div>
+        <div id="compare-box" class="card" style="display:none;margin-bottom:0;"></div>
+
+        <div class="card" style="margin-top:14px;display:flex;align-items:center;gap:12px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:#e6f0fb;display:flex;align-items:center;justify-content:center;flex-shrink:0;">🖨️</div>
+          <div style="flex:1;">
+            <div style="font-size:13.5px;font-weight:600;">Chek chop etish</div>
+            <div style="font-size:12px;color:var(--muted);" id="printer-status">USB printer aniqlanmagan</div>
+          </div>
+          <button id="print-btn" style="font-size:13px;">Chekni chop etish</button>
+        </div>
+
+        <button class="btn-primary" id="submit-btn" style="width:100%;padding:14px;margin-top:14px;">Kassani yuborish</button>
+        <div style="text-align:center;margin-top:8px;font-size:12px;color:#8b8a97;">Yuborilgach faqat admin tahrirlashi mumkin</div>
+        <div id="err" class="error-box" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/escpos.js"></script>
+<script>
+  const DENOMS = [100000, 50000, 20000, 10000, 5000, 1000];
+  let paymentTypes = [];
+  let currentEntry = null;
+  let currentUser = null;
+
+  function computeAndRender() {
+    const denomVals = {};
+    document.querySelectorAll('.denom-input').forEach((inp) => { denomVals[inp.dataset.denom] = Number(inp.value) || 0; });
+    const tozaAuto = Object.entries(denomVals).reduce((s, [d, c]) => s + Number(d) * c, 0);
+    document.getElementById('toza-naqd').value = tozaAuto || '';
+
+    const paymentAmounts = {};
+    let card = 0, cert = 0;
+    document.querySelectorAll('.pay-input').forEach((inp) => {
+      const v = Number(inp.value) || 0;
+      paymentAmounts[inp.dataset.id] = v;
+      if (inp.dataset.group === 'certificate') cert += v; else card += v;
+    });
+
+    const toza = Number(document.getElementById('toza-naqd').value) || 0;
+    const rasxod = Number(document.getElementById('rasxod-val').textContent.replace(/\s/g, '')) || 0;
+    const inkassatsiya = Number(document.getElementById('inkassatsiya').value) || 0;
+    const smenaFarqi = currentEntry ? Number(currentEntry.smena_farqi || 0) : 0;
+
+    const nalichnie = toza + rasxod + inkassatsiya + smenaFarqi;
+    const jami = nalichnie + card + cert;
+
+    document.getElementById('card-val').textContent = fmtMoney(card);
+    document.getElementById('cert-val').textContent = fmtMoney(cert);
+    document.getElementById('jami-val').textContent = `${fmtMoney(jami)} so'm`;
+
+    return { denominations: denomVals, toza_naqd: toza, inkassatsiya, payment_amounts: paymentAmounts };
+  }
+
+  function renderDenoms(values) {
+    document.getElementById('denom-grid').innerHTML = DENOMS.map((d) => `
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">${fmtMoney(d)}</div>
+        <input type="number" class="denom-input" data-denom="${d}" min="0" step="1" value="${values[d] || ''}">
+      </div>`).join('');
+    document.querySelectorAll('.denom-input').forEach((inp) => inp.addEventListener('input', computeAndRender));
+  }
+
+  function renderPayments(paymentAmounts) {
+    document.getElementById('payment-rows').innerHTML = paymentTypes.map((p) => `
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:13.5px;">${p.name}</span>
+        <input type="number" class="pay-input" data-id="${p.id}" data-group="${p.group_type}" min="0" step="1" style="width:140px;text-align:right;" value="${paymentAmounts[p.id] || ''}">
+      </div>`).join('') || '<div class="empty">To\'lov turlari hali qo\'shilmagan</div>';
+    document.querySelectorAll('.pay-input').forEach((inp) => inp.addEventListener('input', computeAndRender));
+  }
+
+  function renderLockState(entry, isAdmin) {
+    const locked = !isAdmin && !!entry.submitted_at;
+    document.querySelectorAll('input, #submit-btn').forEach((el) => { if (locked) el.disabled = true; });
+    document.getElementById('submit-btn').style.display = entry.submitted_at ? 'none' : 'block';
+    document.querySelector('.page-sub').nextElementSibling; // no-op, keeps structure
+
+    if (entry.submitted_at) {
+      const lockedUntil = entry.locked_until ? new Date(entry.locked_until) : null;
+      const stillLocked = lockedUntil && lockedUntil > new Date();
+      if (stillLocked && !isAdmin) {
+        document.getElementById('lock-box').style.display = 'flex';
+      } else {
+        loadCompare();
+      }
+    }
+  }
+
+  async function loadCompare() {
+    try {
+      const businessDate = document.getElementById('date-sub').dataset.date;
+      const cmp = await api(`/cash/${businessDate}/poster-compare`);
+      document.getElementById('compare-box').style.display = 'block';
+      document.getElementById('compare-box').innerHTML = `
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;">Poster bilan solishtirish</div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;"><span style="color:var(--muted);font-size:13px;">Bizning kassa</span><span style="font-weight:600;">${fmtMoney(cmp.entry_jami)}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;"><span style="color:var(--muted);font-size:13px;">Poster</span><span style="font-weight:600;">${fmtMoney(cmp.poster_jami)}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid #efeee8;"><span style="font-size:13px;">Farq</span><span style="font-weight:700;color:${Math.abs(cmp.farq) < 1 ? 'var(--green-fg)' : 'var(--red-fg)'};">${fmtMoney(cmp.farq)}</span></div>`;
+    } catch (e) {
+      if (e.status === 423) {
+        document.getElementById('lock-box').style.display = 'flex';
+      }
+    }
+  }
+
+  async function refreshEntry() {
+    const { entry, payment_types } = await api('/cash');
+    currentEntry = entry;
+    paymentTypes = payment_types;
+    document.getElementById('rasxod-val').textContent = fmtMoney(entry.rasxod);
+    renderDenoms(entry.denominations || {});
+    renderPayments(entry.payment_amounts || {});
+    document.getElementById('inkassatsiya').value = entry.inkassatsiya || '';
+    computeAndRender();
+    renderLockState(entry, currentUser.role === 'admin');
+  }
+
+  (async () => {
+    currentUser = await bootPage();
+    if (!currentUser) return;
+    const dateSub = document.getElementById('date-sub');
+    dateSub.textContent = new Date().toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' }) + ' · Ish kuni 05:00–05:00';
+
+    await refreshEntry();
+    dateSub.dataset.date = currentEntry.business_date;
+
+    document.getElementById('submit-btn').addEventListener('click', async () => {
+      const errBox = document.getElementById('err');
+      errBox.style.display = 'none';
+      const payload = computeAndRender();
+      try {
+        await api('/cash', { method: 'PUT', body: payload });
+        await api('/cash/submit', { method: 'POST' });
+        await refreshEntry();
+      } catch (e) {
+        errBox.textContent = e.message;
+        errBox.style.display = 'block';
+      }
+    });
+
+    // Saqlash (yuborilmasdan oldin) — inputlar o'zgarganda fon rejimida saqlanadi.
+    let saveTimer = null;
+    document.querySelector('.main').addEventListener('input', (e) => {
+      if (!e.target.matches('.denom-input, .pay-input, #toza-naqd, #inkassatsiya')) return;
+      if (currentEntry && currentEntry.submitted_at && currentUser.role !== 'admin') return;
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(async () => {
+        const payload = computeAndRender();
+        try { await api('/cash', { method: 'PUT', body: payload }); } catch (e) { /* jim saqlanadi */ }
+      }, 600);
+    });
+
+    document.getElementById('print-btn').addEventListener('click', async () => {
+      await printCashReceipt(currentEntry, paymentTypes, document.getElementById('printer-status'));
+    });
+
+    if (window.navigator && window.navigator.usb) {
+      document.getElementById('printer-status').textContent = 'USB printerga ulanish uchun bosing';
+    } else {
+      document.getElementById('printer-status').textContent = 'Brauzer WebUSB\'ni qo\'llab-quvvatlamaydi (Chrome/Edge kerak)';
+      document.getElementById('print-btn').disabled = true;
+    }
+  })();
+</script>
+</body>
+</html>

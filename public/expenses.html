@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xarajatlar — Mondo Region</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="assets/logo.png">
+</head>
+<body>
+<div class="app-shell">
+  <div class="sidebar" id="sidebar-root"></div>
+  <div class="main">
+    <div class="page-title">Yangi xarajat qo'shish</div>
+    <div class="page-sub" id="date-sub"></div>
+
+    <div style="display:flex;gap:24px;align-items:flex-start;">
+      <div style="flex:1;">
+        <div class="card">
+          <label>Xarajat turi</label>
+          <div id="type-chips" style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;"></div>
+
+          <div id="employee-field" style="display:none;">
+            <label>Xodim</label>
+            <select id="employee-select" style="margin-bottom:18px;"></select>
+          </div>
+
+          <label>Summa (so'm)</label>
+          <input type="number" id="amount" min="0" step="1" placeholder="0" style="margin-bottom:18px;">
+
+          <label>Kommentariya (ixtiyoriy)</label>
+          <textarea id="comment" rows="2" placeholder="Masalan: uy uchun avans so'radi" style="margin-bottom:20px;"></textarea>
+
+          <button class="btn-primary" id="submit-btn" style="width:100%;padding:13px;">Xarajatni qo'shish</button>
+          <div id="err" class="error-box" style="display:none;"></div>
+        </div>
+      </div>
+
+      <div style="flex:1.2;">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:16px;">Bugungi xarajatlar</div>
+          <div style="font-size:13px;color:var(--muted);">Jami: <b id="total" style="color:var(--ink);">0 so'm</b></div>
+        </div>
+        <div class="card" id="list" style="padding:8px;"></div>
+        <div class="hint-box">Bu yozuvlar avtomatik <b>Kassa kiritish → Rasxod</b> maydoniga va <b>FOT</b> bo'limiga tushadi.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/nav.js"></script>
+<script>
+  let expenseTypes = [];
+  let employees = [];
+  let selectedType = null;
+
+  function renderChips() {
+    document.getElementById('type-chips').innerHTML = expenseTypes.map((t) => `
+      <div class="chip ${selectedType && selectedType.id === t.id ? 'selected' : ''}" data-id="${t.id}">${t.name}</div>
+    `).join('');
+    document.querySelectorAll('.chip').forEach((chip) => chip.addEventListener('click', () => {
+      selectedType = expenseTypes.find((t) => t.id === Number(chip.dataset.id));
+      renderChips();
+      document.getElementById('employee-field').style.display = selectedType.requires_employee ? 'block' : 'none';
+    }));
+  }
+
+  async function loadList(user) {
+    const { expenses, total } = await api('/expenses');
+    document.getElementById('total').textContent = `${fmtMoney(total)} so'm`;
+    const canDelete = user.role === 'admin' || user.role === 'curator';
+    document.getElementById('list').innerHTML = expenses.length ? expenses.map((e) => `
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;border-bottom:1px solid #efeee8;">
+        <div style="flex:1;">
+          <div style="font-size:13.5px;font-weight:600;">${e.expense_type_name}${e.employee_name ? ' — ' + e.employee_name : ''}</div>
+          <div style="font-size:12px;color:var(--muted);">${new Date(e.created_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}${e.comment ? ' · ' + e.comment : ''}</div>
+        </div>
+        <div style="font-size:14px;font-weight:700;">${fmtMoney(e.amount)}</div>
+        ${canDelete ? `<span class="btn-danger-text" data-del="${e.id}" style="cursor:pointer;">✕</span>` : ''}
+      </div>`).join('') : '<div class="empty">Hali xarajat kiritilmagan</div>';
+
+    document.querySelectorAll('[data-del]').forEach((el) => el.addEventListener('click', async () => {
+      if (!confirm("O'chirilsinmi?")) return;
+      await api(`/expenses/${el.dataset.del}`, { method: 'DELETE' });
+      loadList(user);
+    }));
+  }
+
+  (async () => {
+    const user = await bootPage();
+    if (!user) return;
+    document.getElementById('date-sub').textContent = new Date().toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    const [etRes, empRes] = await Promise.all([api('/admin/expense-types'), api('/admin/employees')]);
+    expenseTypes = etRes.expense_types;
+    employees = (empRes.employees || []).filter((e) => e.active && !e.hidden);
+    selectedType = expenseTypes[0] || null;
+    renderChips();
+    if (selectedType) document.getElementById('employee-field').style.display = selectedType.requires_employee ? 'block' : 'none';
+
+    document.getElementById('employee-select').innerHTML = employees.map((e) => `<option value="${e.id}">${e.full_name}${e.position_name ? ' — ' + e.position_name : ''}</option>`).join('');
+
+    document.getElementById('submit-btn').addEventListener('click', async () => {
+      const errBox = document.getElementById('err');
+      errBox.style.display = 'none';
+      const amount = Number(document.getElementById('amount').value);
+      if (!selectedType) { errBox.textContent = 'Xarajat turini tanlang'; errBox.style.display = 'block'; return; }
+      if (!(amount > 0)) { errBox.textContent = "Summani kiriting"; errBox.style.display = 'block'; return; }
+      const employee_id = selectedType.requires_employee ? Number(document.getElementById('employee-select').value) : null;
+      try {
+        await api('/expenses', { method: 'POST', body: { expense_type_id: selectedType.id, employee_id, amount, comment: document.getElementById('comment').value } });
+        document.getElementById('amount').value = '';
+        document.getElementById('comment').value = '';
+        loadList(user);
+      } catch (e) {
+        errBox.textContent = e.message;
+        errBox.style.display = 'block';
+      }
+    });
+
+    loadList(user);
+  })();
+</script>
+</body>
+</html>

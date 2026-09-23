@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bosh sahifa — Mondo Region</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="assets/logo.png">
+</head>
+<body>
+<div class="app-shell">
+  <div class="sidebar" id="sidebar-root"></div>
+  <div class="main">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;">
+      <div class="page-title" id="greeting">Xayrli kun!</div>
+      <div style="font-size:13px;color:var(--muted);" id="today-date"></div>
+    </div>
+    <div class="page-sub" id="branch-sub"></div>
+
+    <div class="grid-4" id="kpi-row" style="margin-bottom:28px;"></div>
+
+    <div style="font-size:13px;font-weight:700;margin-bottom:12px;">Bo'limlarga o'tish</div>
+    <div class="grid-3" id="shortcuts"></div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/nav.js"></script>
+<script>
+  const SHORTCUTS = [
+    { href: 'bozorlik.html', title: 'Bozorlik kiritish', desc: "Bugungi bozor xaridlarini shablon bo'yicha to'ldiring", section: 'bozorlik' },
+    { href: 'expenses.html', title: 'Xarajat qo\'shish', desc: 'Avans, ofitsant to\'lovi, texnichka va boshqa rasxodlar', section: 'expenses' },
+    { href: 'cash-entry.html', title: 'Kunlik kassani yopish', desc: 'Kupyuralar va to\'lov turlarini kiriting', section: 'cash' },
+  ];
+
+  (async () => {
+    const user = await bootPage();
+    if (!user) return;
+
+    document.getElementById('greeting').textContent = `Xayrli kun, ${user.full_name.split(' ')[0]}!`;
+    document.getElementById('branch-sub').textContent = `${window.BRANCH_NAME || "Farg'ona filiali"} bo'yicha bugungi holat`;
+    document.getElementById('today-date').textContent = new Date().toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    const summary = await api('/dashboard/summary');
+
+    const kpiRow = document.getElementById('kpi-row');
+    const cards = [];
+    if (summary.show_sales_widget) {
+      cards.push(`<div class="card"><div class="kpi-label">Bugungi savdo</div><div class="kpi-value">${summary.today_sales === null ? '—' : fmtMoney(summary.today_sales) + " so'm"}</div></div>`);
+    }
+    cards.push(`<div class="card"><div class="kpi-label">Kutilayotgan bozorliklar</div><div class="kpi-value">${summary.pending_bozorlik} ta</div></div>`);
+    cards.push(`<div class="card"><div class="kpi-label">Bugungi xarajatlar</div><div class="kpi-value">${fmtMoney(summary.today_expenses)} so'm</div></div>`);
+    cards.push(`<div class="kpi-dark"><div class="kpi-label">Kassa holati</div><div class="kpi-value">${summary.cash_submitted ? 'Yuborilgan' : 'Kiritilmagan'}</div></div>`);
+    kpiRow.innerHTML = cards.join('');
+
+    const shortcuts = SHORTCUTS.filter((s) => user.role === 'admin' || (user.allowed_sections || []).includes(s.section));
+    document.getElementById('shortcuts').innerHTML = shortcuts.map((s) => `
+      <a href="${s.href}"><div class="card">
+        <div style="font-size:14px;font-weight:600;margin-bottom:4px;">${s.title}</div>
+        <div style="font-size:12.5px;color:var(--muted);">${s.desc}</div>
+      </div></a>`).join('') || '<div class="empty">Sizga hozircha faol bo\'lim biriktirilmagan</div>';
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bozorlik — Mondo Region</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="assets/logo.png">
+</head>
+<body>
+<div class="app-shell">
+  <div class="sidebar" id="sidebar-root"></div>
+  <div class="main">
+    <div class="page-title">Bozorlik kiritish</div>
+    <div class="page-sub" id="date-sub"></div>
+
+    <div style="display:flex;gap:24px;align-items:flex-start;">
+      <div style="flex:1.6;">
+        <div class="card">
+          <div id="rows"></div>
+          <button type="button" class="btn-ghost" id="add-row" style="margin-top:14px;">+ Ingredient qo'shish</button>
+          <div style="margin-top:6px;font-size:12px;color:var(--muted);">Ro'yxatda yo'q ingredient kerakmi? Admin/curator panelda qo'shadi.</div>
+
+          <div style="margin-top:18px;">
+            <label>Kommentariya</label>
+            <textarea id="comment" rows="2" placeholder="Masalan: bozor narxi ko'tarilgani sababli..."></textarea>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px;padding-top:18px;border-top:1px solid var(--border);">
+            <div>
+              <div style="font-size:12px;color:var(--muted);">Jami summa</div>
+              <div class="display" style="font-size:22px;font-weight:700;" id="total">0 so'm</div>
+            </div>
+            <button class="btn-primary" id="submit-btn">Yuborish</button>
+          </div>
+          <div id="err" class="error-box" style="display:none;"></div>
+        </div>
+      </div>
+
+      <div style="flex:1;">
+        <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:16px;margin-bottom:14px;">Oxirgi yuborilgan bozorliklar</div>
+        <div id="entries"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/nav.js"></script>
+<script>
+  let ingredients = [];
+  let rowCount = 0;
+
+  function rowTemplate(id) {
+    const options = ingredients.map((i) => `<option value="${i.id}" data-unit="${i.unit}">${i.name}</option>`).join('');
+    return `
+      <div class="bz-row" data-row="${id}" style="display:grid;grid-template-columns:36% 16% 12% 18% 14% 4%;gap:8px;align-items:center;background:var(--paper);border-radius:10px;padding:9px 8px;margin-bottom:8px;">
+        <select class="ing-select">${options}</select>
+        <input type="number" class="qty" placeholder="Miqdor" min="0" step="0.01">
+        <div class="unit" style="font-size:13px;color:var(--muted);"></div>
+        <input type="number" class="price" placeholder="Narx (so'm)" min="0" step="1">
+        <div class="sum" style="font-size:13.5px;font-weight:600;">0</div>
+        <div style="text-align:center;color:#b0aea5;cursor:pointer;" class="remove-row">✕</div>
+      </div>`;
+  }
+
+  function addRow() {
+    rowCount += 1;
+    const div = document.createElement('div');
+    div.innerHTML = rowTemplate(rowCount);
+    document.getElementById('rows').appendChild(div.firstElementChild);
+    wireRow(document.querySelector(`.bz-row[data-row="${rowCount}"]`));
+    updateTotal();
+  }
+
+  function wireRow(row) {
+    const select = row.querySelector('.ing-select');
+    const qty = row.querySelector('.qty');
+    const price = row.querySelector('.price');
+    const unitEl = row.querySelector('.unit');
+    const sumEl = row.querySelector('.sum');
+    const updateUnit = () => { unitEl.textContent = select.selectedOptions[0]?.dataset.unit || ''; };
+    const updateSum = () => {
+      const s = (Number(qty.value) || 0) * (Number(price.value) || 0);
+      sumEl.textContent = fmtMoney(s);
+      updateTotal();
+    };
+    select.addEventListener('change', () => { updateUnit(); updateSum(); });
+    qty.addEventListener('input', updateSum);
+    price.addEventListener('input', updateSum);
+    updateUnit();
+    row.querySelector('.remove-row').addEventListener('click', () => { row.remove(); updateTotal(); });
+  }
+
+  function updateTotal() {
+    let total = 0;
+    document.querySelectorAll('.bz-row').forEach((row) => {
+      const qty = Number(row.querySelector('.qty').value) || 0;
+      const price = Number(row.querySelector('.price').value) || 0;
+      total += qty * price;
+    });
+    document.getElementById('total').textContent = `${fmtMoney(total)} so'm`;
+  }
+
+  function collectItems() {
+    const items = [];
+    document.querySelectorAll('.bz-row').forEach((row) => {
+      const ingredient_id = Number(row.querySelector('.ing-select').value);
+      const quantity = Number(row.querySelector('.qty').value);
+      const unit_price = Number(row.querySelector('.price').value);
+      if (ingredient_id && quantity > 0) items.push({ ingredient_id, quantity, unit_price: unit_price || 0 });
+    });
+    return items;
+  }
+
+  function statusPill(status) {
+    if (status === 'posted') return '<span class="pill pill-green">Posterga kiritildi</span>';
+    if (status === 'approved') return '<span class="pill pill-amber">Tasdiqlangan</span>';
+    return '<span class="pill pill-amber">Ko\'rib chiqilmoqda</span>';
+  }
+
+  async function loadEntries(user) {
+    const { entries } = await api('/bozorlik');
+    const canApprove = user.role === 'admin' || user.role === 'curator';
+    document.getElementById('entries').innerHTML = entries.length ? entries.map((e) => `
+      <div class="card" style="margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="font-size:13.5px;font-weight:600;">${e.business_date}</div>
+          ${statusPill(e.status)}
+        </div>
+        <div style="font-size:12.5px;color:var(--muted);margin-bottom:${canApprove ? '10' : '0'}px;">${fmtMoney(e.total_amount)} so'm · ${e.created_by_name || ''}</div>
+        ${canApprove && e.status === 'pending' ? `<button class="btn" data-approve="${e.id}" style="font-size:12px;padding:6px 12px;">Tasdiqlash</button>` : ''}
+        ${canApprove && e.status === 'approved' ? `<button class="btn-primary" data-post="${e.id}" style="font-size:12px;padding:6px 12px;">Posterga kiritish</button>` : ''}
+      </div>`).join('') : '<div class="empty">Hali bozorlik yozuvlari yo\'q</div>';
+
+    document.querySelectorAll('[data-approve]').forEach((btn) => btn.addEventListener('click', async () => {
+      await api(`/bozorlik/${btn.dataset.approve}/approve`, { method: 'POST' });
+      loadEntries(user);
+    }));
+    document.querySelectorAll('[data-post]').forEach((btn) => btn.addEventListener('click', async () => {
+      try {
+        await api(`/bozorlik/${btn.dataset.post}/post-to-poster`, { method: 'POST' });
+        loadEntries(user);
+      } catch (e) {
+        alert(e.message);
+      }
+    }));
+  }
+
+  (async () => {
+    const user = await bootPage();
+    if (!user) return;
+    document.getElementById('date-sub').textContent = new Date().toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    const ingRes = await api('/admin/ingredients').catch(() => ({ ingredients: [] }));
+    ingredients = ingRes.ingredients || [];
+    if (ingredients.length === 0) {
+      document.getElementById('rows').innerHTML = '<div class="empty">Hali ingredientlar qo\'shilmagan — admin panelda qo\'shing</div>';
+      document.getElementById('add-row').disabled = true;
+    } else {
+      addRow();
+    }
+
+    document.getElementById('add-row').addEventListener('click', addRow);
+
+    document.getElementById('submit-btn').addEventListener('click', async () => {
+      const items = collectItems();
+      const errBox = document.getElementById('err');
+      errBox.style.display = 'none';
+      if (!items.length) { errBox.textContent = 'Kamida bitta ingredient kiriting'; errBox.style.display = 'block'; return; }
+      try {
+        await api('/bozorlik', { method: 'POST', body: { items, comment: document.getElementById('comment').value } });
+        document.getElementById('rows').innerHTML = '';
+        rowCount = 0;
+        addRow();
+        document.getElementById('comment').value = '';
+        updateTotal();
+        loadEntries(user);
+      } catch (e) {
+        errBox.textContent = e.message;
+        errBox.style.display = 'block';
+      }
+    });
+
+    loadEntries(user);
+  })();
+</script>
+</body>
+</html>

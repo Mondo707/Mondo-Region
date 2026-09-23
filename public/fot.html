@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FOT — Mondo Region</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="assets/logo.png">
+<style>
+  .fot-group-row td { background: #eeecf7; color: var(--purple); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+  #fot-table td, #fot-table th { text-align: right; }
+  #fot-table td.left, #fot-table th.left { text-align: left; }
+  #fot-table .fiksa-cell { background: var(--amber-bg); }
+  .raschet-input { width: 100px; text-align: right; padding: 4px 6px; font-size: 12.5px; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <div class="sidebar" id="sidebar-root"></div>
+  <div class="main">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;">
+      <div class="page-title">FOT — Fond oplati truda</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <input type="month" id="period" style="padding:9px 12px;">
+        <a id="export-link" href="#"><button>Excel eksport</button></a>
+      </div>
+    </div>
+    <div class="page-sub">Avans / Ofitsant / Texnichka to'lovlari Xarajatlar bo'limidan avtomatik yig'iladi</div>
+
+    <div class="grid-4" id="kpi-row" style="margin-bottom:16px;"></div>
+
+    <div class="card" style="padding:0;overflow:auto;">
+      <table id="fot-table"></table>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:var(--muted);">Jadval lavozim bo'yicha guruhlangan va o'ngga qarab suriladi. Raschet — oy yopilishida qo'lda kiritiladi (faqat admin). Fakt — kunlik summalar avtomatik yig'indisi. % = Fakt / Fiksa.</div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/nav.js"></script>
+<script>
+  let currentUser = null;
+
+  function percentColor(p) {
+    if (p === null) return '';
+    if (p >= 95 && p <= 105) return 'color:var(--green-fg);font-weight:700;';
+    if (p < 70) return 'color:var(--red-fg);font-weight:700;';
+    return 'color:var(--amber-fg);font-weight:700;';
+  }
+
+  async function loadFot(period) {
+    const data = await api(`/fot?period=${period}`);
+    const { days, rows } = data;
+
+    const totalFakt = rows.reduce((s, r) => s + r.fakt, 0);
+    const totalFiksa = rows.reduce((s, r) => s + (r.fiksa_type === 'summa' ? r.fiksa_amount : 0), 0);
+    const avgPercent = rows.filter((r) => r.percent !== null);
+    const avg = avgPercent.length ? Math.round(avgPercent.reduce((s, r) => s + r.percent, 0) / avgPercent.length) : 0;
+    const over100 = rows.filter((r) => r.percent !== null && r.percent >= 100).length;
+
+    document.getElementById('kpi-row').innerHTML = `
+      <div class="card"><div class="kpi-label">Jami Fakt (oy)</div><div class="kpi-value">${fmtMoney(totalFakt)}</div></div>
+      <div class="card"><div class="kpi-label">Jami Fiksa (oy)</div><div class="kpi-value">${fmtMoney(totalFiksa)}</div></div>
+      <div class="card"><div class="kpi-label">O'rtacha bajarilish</div><div class="kpi-value">${avg}%</div></div>
+      <div class="kpi-dark"><div class="kpi-label">Fiksadan 100%+ oshganlar</div><div class="kpi-value">${over100} xodim</div></div>
+    `;
+
+    const dayHeaders = days.map((d) => `<th>${d.slice(8, 10)}.${d.slice(5, 7)}</th>`).join('');
+    let bodyHtml = '';
+    let lastPosition = null;
+    for (const r of rows) {
+      if (r.position_name !== lastPosition) {
+        bodyHtml += `<tr class="fot-group-row"><td colspan="${5 + days.length}">${r.position_name}</td></tr>`;
+        lastPosition = r.position_name;
+      }
+      const dayCells = days.map((d) => `<td>${r.daily[d] ? fmtMoney(r.daily[d]) : '—'}</td>`).join('');
+      const fiksaCell = r.fiksa_type === 'summa' ? fmtMoney(r.fiksa_amount) : (r.fiksa_type === 'kunlik' ? 'Kunlik' : 'Haftalik');
+      const raschetCell = currentUser.role === 'admin'
+        ? `<input type="number" class="raschet-input" data-emp="${r.employee_id}" value="${r.raschet || ''}" placeholder="0">`
+        : fmtMoney(r.raschet);
+      bodyHtml += `<tr>
+        <td class="left">${r.full_name}</td>
+        ${dayCells}
+        <td style="color:var(--purple);">${raschetCell}</td>
+        <td style="font-weight:700;">${fmtMoney(r.fakt)}</td>
+        <td class="fiksa-cell">${fiksaCell}</td>
+        <td style="${percentColor(r.percent)}">${r.percent === null ? '—' : r.percent + '%'}</td>
+      </tr>`;
+    }
+
+    document.getElementById('fot-table').innerHTML = `
+      <thead><tr>
+        <th class="left" style="min-width:150px;">F.I.O</th>
+        ${dayHeaders}
+        <th style="color:var(--purple);">Raschet</th>
+        <th>Fakt</th>
+        <th style="background:var(--amber-bg);">Fiksa</th>
+        <th>%</th>
+      </tr></thead>
+      <tbody>${bodyHtml || `<tr><td class="empty" colspan="${5 + days.length}">Ma'lumot yo'q</td></tr>`}</tbody>`;
+
+    if (currentUser.role === 'admin') {
+      document.querySelectorAll('.raschet-input').forEach((inp) => {
+        let t = null;
+        inp.addEventListener('input', () => {
+          clearTimeout(t);
+          t = setTimeout(async () => {
+            await api('/fot/raschet', { method: 'PUT', body: { employee_id: Number(inp.dataset.emp), period, raschet_amount: Number(inp.value) || 0 } });
+          }, 600);
+        });
+      });
+    }
+
+    document.getElementById('export-link').href = `/api/fot/export.xlsx?period=${period}`;
+  }
+
+  (async () => {
+    currentUser = await bootPage();
+    if (!currentUser) return;
+    const period = new Date().toISOString().slice(0, 7);
+    document.getElementById('period').value = period;
+    await loadFot(period);
+    document.getElementById('period').addEventListener('change', (e) => loadFot(e.target.value));
+  })();
+</script>
+</body>
+</html>

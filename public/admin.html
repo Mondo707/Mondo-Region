@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin panel — Mondo Region</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="assets/logo.png">
+</head>
+<body>
+<div class="app-shell">
+  <div class="sidebar" id="sidebar-root"></div>
+  <div class="main">
+    <div class="page-title">Admin panel</div>
+    <div class="tabs" id="tabs"></div>
+    <div id="tab-content"></div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/nav.js"></script>
+<script>
+  let currentUser = null;
+  let positions = [];
+
+  const ALL_TABS = [
+    { id: 'employees', label: 'Xodimlar', roles: ['admin', 'curator'] },
+    { id: 'positions', label: 'Lavozimlar', roles: ['admin', 'curator'] },
+    { id: 'expense-types', label: 'Xarajat turlari', roles: ['admin'] },
+    { id: 'payment-types', label: "To'lov turlari", roles: ['admin'] },
+    { id: 'ingredients', label: 'Bozorlik ingredientlari', roles: ['admin', 'curator'] },
+    { id: 'categories', label: 'Kunlik savdo kategoriyalari', roles: ['admin', 'curator'] },
+    { id: 'users', label: 'Foydalanuvchilar', roles: ['admin'] },
+  ];
+
+  function renderTabs(active) {
+    const visible = ALL_TABS.filter((t) => t.roles.includes(currentUser.role));
+    document.getElementById('tabs').innerHTML = visible.map((t) => `<button class="tab ${t.id === active ? 'active' : ''}" data-tab="${t.id}">${t.label}</button>`).join('');
+    document.querySelectorAll('[data-tab]').forEach((btn) => btn.addEventListener('click', () => openTab(btn.dataset.tab)));
+    return visible;
+  }
+
+  async function openTab(id) {
+    window.location.hash = id;
+    const visible = renderTabs(id);
+    if (!visible.find((t) => t.id === id)) id = visible[0]?.id;
+    const renderers = {
+      employees: renderEmployees, positions: renderPositions, 'expense-types': renderExpenseTypes,
+      'payment-types': renderPaymentTypes, ingredients: renderIngredients, categories: renderCategories, users: renderUsers,
+    };
+    if (renderers[id]) await renderers[id]();
+  }
+
+  // ---------- Xodimlar ----------
+  async function renderEmployees() {
+    const [{ employees }, posRes] = await Promise.all([api('/admin/employees'), api('/admin/positions')]);
+    positions = posRes.positions;
+    const isAdmin = currentUser.role === 'admin';
+
+    const posOptions = positions.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
+
+    document.getElementById('tab-content').innerHTML = `
+      <div style="display:flex;gap:24px;">
+        <div style="flex:1.6;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div style="font-size:13px;color:var(--muted);">${employees.length} xodim · ${employees.filter((e) => e.active).length} faol</div>
+          </div>
+          <div class="card" style="padding:0;overflow:auto;">
+            <table>
+              <thead><tr><th>F.I.O</th><th>Lavozim</th><th>Fiksa</th><th>Bonus</th><th>Holat</th><th></th></tr></thead>
+              <tbody>${employees.map((e) => `
+                <tr>
+                  <td>${e.full_name}</td>
+                  <td>${e.position_name || '—'}</td>
+                  <td>${e.fiksa_type === 'summa' ? fmtMoney(e.fiksa_amount) : (e.fiksa_type === 'kunlik' ? 'Kunlik' : 'Haftalik')}</td>
+                  <td>${Number(e.bonus_amount) ? fmtMoney(e.bonus_amount) : '—'}</td>
+                  <td>${e.hidden ? '<span class="pill pill-gray">Yashirilgan</span>' : (e.active ? '<span class="pill pill-green">Faol</span>' : '<span class="pill pill-amber">Nofaol</span>')}</td>
+                  <td><span class="btn-link" data-edit-emp="${e.id}">Tahrirlash</span></td>
+                </tr>`).join('') || '<tr><td class="empty" colspan="6">Xodimlar yo\'q</td></tr>'}</tbody>
+            </table>
+          </div>
+        </div>
+
+        <div style="width:340px;flex-shrink:0;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;margin-bottom:12px;" id="emp-form-title">Yangi xodim</div>
+          <div class="card">
+            <input type="hidden" id="emp-id">
+            <label>F.I.O</label>
+            <input type="text" id="emp-name" placeholder="Ism Familiya" style="margin-bottom:14px;">
+            <label>Lavozim</label>
+            <select id="emp-position" style="margin-bottom:14px;"><option value="">Lavozimni tanlang</option>${posOptions}</select>
+            ${isAdmin ? `
+            <label>Fiksa turi</label>
+            <select id="emp-fiksa-type" style="margin-bottom:14px;">
+              <option value="summa">Summa</option><option value="kunlik">Kunlik</option><option value="haftalik">Haftalik</option>
+            </select>
+            <label>Fiksa summasi (so'm)</label>
+            <input type="number" id="emp-fiksa-amount" placeholder="5000000" style="margin-bottom:14px;">
+            <label>Bonus (ixtiyoriy)</label>
+            <input type="number" id="emp-bonus" placeholder="0" style="margin-bottom:14px;">
+            <label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="emp-active" checked style="width:auto;"> Faol</label>
+            <label style="display:flex;align-items:center;gap:8px;margin-top:8px;"><input type="checkbox" id="emp-hidden" style="width:auto;"> Yashirilgan</label>
+            ` : '<div class="hint-box">Fiksa/Bonus maydonlarini faqat admin tahrirlaydi.</div>'}
+            <button class="btn-primary" id="emp-save" style="width:100%;padding:12px;margin-top:14px;">Xodimni saqlash</button>
+            <button class="btn" id="emp-cancel" style="width:100%;margin-top:8px;display:none;">Bekor qilish / Yangi</button>
+          </div>
+        </div>
+      </div>`;
+
+    function resetForm() {
+      document.getElementById('emp-form-title').textContent = 'Yangi xodim';
+      document.getElementById('emp-id').value = '';
+      document.getElementById('emp-name').value = '';
+      document.getElementById('emp-position').value = '';
+      if (isAdmin) {
+        document.getElementById('emp-fiksa-type').value = 'summa';
+        document.getElementById('emp-fiksa-amount').value = '';
+        document.getElementById('emp-bonus').value = '';
+        document.getElementById('emp-active').checked = true;
+        document.getElementById('emp-hidden').checked = false;
+      }
+      document.getElementById('emp-cancel').style.display = 'none';
+    }
+
+    document.querySelectorAll('[data-edit-emp]').forEach((el) => el.addEventListener('click', () => {
+      const emp = employees.find((e) => e.id === Number(el.dataset.editEmp));
+      document.getElementById('emp-form-title').textContent = `Tahrirlash — ${emp.full_name}`;
+      document.getElementById('emp-id').value = emp.id;
+      document.getElementById('emp-name').value = emp.full_name;
+      document.getElementById('emp-position').value = emp.position_id || '';
+      if (isAdmin) {
+        document.getElementById('emp-fiksa-type').value = emp.fiksa_type;
+        document.getElementById('emp-fiksa-amount').value = emp.fiksa_amount;
+        document.getElementById('emp-bonus').value = emp.bonus_amount;
+        document.getElementById('emp-active').checked = emp.active;
+        document.getElementById('emp-hidden').checked = emp.hidden;
+      }
+      document.getElementById('emp-cancel').style.display = 'block';
+    }));
+    document.getElementById('emp-cancel').addEventListener('click', resetForm);
+
+    document.getElementById('emp-save').addEventListener('click', async () => {
+      const id = document.getElementById('emp-id').value;
+      const body = {
+        full_name: document.getElementById('emp-name').value.trim(),
+        position_id: Number(document.getElementById('emp-position').value) || null,
+      };
+      if (isAdmin) {
+        body.fiksa_type = document.getElementById('emp-fiksa-type').value;
+        body.fiksa_amount = Number(document.getElementById('emp-fiksa-amount').value) || 0;
+        body.bonus_amount = Number(document.getElementById('emp-bonus').value) || 0;
+        body.active = document.getElementById('emp-active').checked;
+        body.hidden = document.getElementById('emp-hidden').checked;
+      }
+      if (!body.full_name) { alert('F.I.O kiriting'); return; }
+      try {
+        if (id) await api(`/admin/employees/${id}`, { method: 'PUT', body });
+        else await api('/admin/employees', { method: 'POST', body });
+        renderEmployees();
+      } catch (e) { alert(e.message); }
+    });
+  }
+
+  // ---------- Lavozimlar ----------
+  async function renderPositions() {
+    const { positions: pos } = await api('/admin/positions');
+    const isAdmin = currentUser.role === 'admin';
+    document.getElementById('tab-content').innerHTML = `
+      <div style="max-width:520px;">
+        <div class="card">
+          <div style="display:flex;flex-direction:column;gap:6px;" id="pos-list"></div>
+          ${isAdmin ? `<div style="display:flex;gap:8px;margin-top:12px;"><input type="text" id="new-pos" placeholder="Yangi lavozim nomi"><button class="btn" id="add-pos">Qo'shish</button></div>` : ''}
+        </div>
+      </div>`;
+    document.getElementById('pos-list').innerHTML = pos.map((p) => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 10px;border-radius:8px;background:var(--paper);">
+        <span style="font-size:13px;">${p.name}</span>
+        ${isAdmin ? `<span class="btn-danger-text" data-del-pos="${p.id}" style="cursor:pointer;">O'chirish</span>` : ''}
+      </div>`).join('') || '<div class="empty">Lavozimlar yo\'q</div>';
+    if (isAdmin) {
+      document.querySelectorAll('[data-del-pos]').forEach((el) => el.addEventListener('click', async () => {
+        if (!confirm("O'chirilsinmi?")) return;
+        try { await api(`/admin/positions/${el.dataset.delPos}`, { method: 'DELETE' }); renderPositions(); }
+        catch (e) { alert(e.message); }
+      }));
+      document.getElementById('add-pos').addEventListener('click', async () => {
+        const input = document.getElementById('new-pos');
+        if (!input.value.trim()) return;
+        await api('/admin/positions', { method: 'POST', body: { name: input.value.trim() } });
+        input.value = '';
+        renderPositions();
+      });
+    }
+  }
+
+  // ---------- Xarajat turlari ----------
+  async function renderExpenseTypes() {
+    const { expense_types } = await api('/admin/expense-types');
+    document.getElementById('tab-content').innerHTML = `
+      <div style="max-width:640px;">
+        <div class="card" style="padding:0;overflow:auto;margin-bottom:16px;">
+          <table>
+            <thead><tr><th>Nomi</th><th>Xodim talab qiladi</th><th>FOT ustuni</th><th></th></tr></thead>
+            <tbody>${expense_types.map((t) => `
+              <tr><td>${t.name}</td><td>${t.requires_employee ? 'Ha' : "Yo'q"}</td><td>${t.fot_bucket || '—'}</td>
+              <td><span class="btn-danger-text" data-del-et="${t.id}" style="cursor:pointer;">O'chirish</span></td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px;">Yangi xarajat turi</div>
+          <label>Nomi</label>
+          <input type="text" id="et-name" style="margin-bottom:12px;">
+          <label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="et-requires-emp" style="width:auto;"> Xodim tanlash talab qilinadi</label>
+          <label style="margin-top:12px;">FOT ustuni (ixtiyoriy)</label>
+          <select id="et-bucket" style="margin-bottom:14px;"><option value="">—</option><option value="avans">Avans</option><option value="ofitsant">Ofitsant</option><option value="texnichka">Texnichka</option></select>
+          <button class="btn-primary" id="et-save">Qo'shish</button>
+        </div>
+      </div>`;
+    document.querySelectorAll('[data-del-et]').forEach((el) => el.addEventListener('click', async () => {
+      if (!confirm("O'chirilsinmi?")) return;
+      await api(`/admin/expense-types/${el.dataset.delEt}`, { method: 'DELETE' });
+      renderExpenseTypes();
+    }));
+    document.getElementById('et-save').addEventListener('click', async () => {
+      const name = document.getElementById('et-name').value.trim();
+      if (!name) return;
+      try {
+        await api('/admin/expense-types', { method: 'POST', body: { name, requires_employee: document.getElementById('et-requires-emp').checked, fot_bucket: document.getElementById('et-bucket').value || null } });
+        renderExpenseTypes();
+      } catch (e) { alert(e.message); }
+    });
+  }
+
+  // ---------- To'lov turlari ----------
+  async function renderPaymentTypes() {
+    const { payment_types } = await api('/admin/payment-types');
+    document.getElementById('tab-content').innerHTML = `
+      <div style="max-width:560px;">
+        <div class="card" style="padding:0;overflow:auto;margin-bottom:16px;">
+          <table>
+            <thead><tr><th>Nomi</th><th>Turi</th><th></th></tr></thead>
+            <tbody>${payment_types.map((p) => `
+              <tr><td>${p.name}</td><td>${p.group_type === 'certificate' ? 'Sertifikat' : 'Karta'}</td>
+              <td><span class="btn-danger-text" data-del-pt="${p.id}" style="cursor:pointer;">O'chirish</span></td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px;">Yangi to'lov turi</div>
+          <label>Nomi</label>
+          <input type="text" id="pt-name" style="margin-bottom:12px;">
+          <label>Turi</label>
+          <select id="pt-group" style="margin-bottom:14px;"><option value="card">Karta (Безналичные)</option><option value="certificate">Sertifikat (Yandex/Jiz-Biz)</option></select>
+          <button class="btn-primary" id="pt-save">Qo'shish</button>
+        </div>
+      </div>`;
+    document.querySelectorAll('[data-del-pt]').forEach((el) => el.addEventListener('click', async () => {
+      if (!confirm("O'chirilsinmi?")) return;
+      await api(`/admin/payment-types/${el.dataset.delPt}`, { method: 'DELETE' });
+      renderPaymentTypes();
+    }));
+    document.getElementById('pt-save').addEventListener('click', async () => {
+      const name = document.getElementById('pt-name').value.trim();
+      if (!name) return;
+      try {
+        await api('/admin/payment-types', { method: 'POST', body: { name, group_type: document.getElementById('pt-group').value } });
+        renderPaymentTypes();
+      } catch (e) { alert(e.message); }
+    });
+  }
+
+  // ---------- Bozorlik ingredientlari ----------
+  async function renderIngredients() {
+    const { ingredients } = await api('/admin/ingredients');
+    document.getElementById('tab-content').innerHTML = `
+      <div style="max-width:640px;">
+        <div class="card" style="padding:0;overflow:auto;margin-bottom:16px;">
+          <table>
+            <thead><tr><th>Nomi</th><th>Birlik</th><th></th></tr></thead>
+            <tbody>${ingredients.map((i) => `
+              <tr><td>${i.name}</td><td>${i.unit}</td>
+              <td><span class="btn-danger-text" data-del-ing="${i.id}" style="cursor:pointer;">O'chirish</span></td></tr>`).join('') || '<tr><td class="empty" colspan="3">Ingredientlar yo\'q</td></tr>'}</tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px;">Yangi ingredient</div>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="ing-name" placeholder="Nomi (masalan: Pomidor)">
+            <select id="ing-unit" style="max-width:110px;"><option value="kg">kg</option><option value="dona">dona</option><option value="litr">litr</option><option value="dasta">dasta</option></select>
+            <button class="btn" id="ing-save">Qo'shish</button>
+          </div>
+        </div>
+      </div>`;
+    document.querySelectorAll('[data-del-ing]').forEach((el) => el.addEventListener('click', async () => {
+      if (!confirm("O'chirilsinmi?")) return;
+      await api(`/admin/ingredients/${el.dataset.delIng}`, { method: 'DELETE' });
+      renderIngredients();
+    }));
+    document.getElementById('ing-save').addEventListener('click', async () => {
+      const name = document.getElementById('ing-name').value.trim();
+      if (!name) return;
+      try {
+        await api('/admin/ingredients', { method: 'POST', body: { name, unit: document.getElementById('ing-unit').value } });
+        renderIngredients();
+      } catch (e) { alert(e.message); }
+    });
+  }
+
+  // ---------- Kunlik savdo kategoriyalari ----------
+  async function renderCategories() {
+    const { categories } = await api('/admin/categories');
+    document.getElementById('tab-content').innerHTML = `
+      <div style="max-width:640px;">
+        <div class="card" style="padding:0;overflow:auto;margin-bottom:16px;">
+          <table>
+            <thead><tr><th>Nomi</th><th></th></tr></thead>
+            <tbody>${categories.map((c) => `
+              <tr><td>${c.name}</td><td><span class="btn-danger-text" data-del-cat="${c.id}" style="cursor:pointer;">O'chirish</span></td></tr>`).join('')}</tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="cat-name" placeholder="Yangi kategoriya nomi">
+            <button class="btn" id="cat-save">Qo'shish</button>
+          </div>
+        </div>
+      </div>`;
+    document.querySelectorAll('[data-del-cat]').forEach((el) => el.addEventListener('click', async () => {
+      if (!confirm("O'chirilsinmi?")) return;
+      await api(`/admin/categories/${el.dataset.delCat}`, { method: 'DELETE' });
+      renderCategories();
+    }));
+    document.getElementById('cat-save').addEventListener('click', async () => {
+      const name = document.getElementById('cat-name').value.trim();
+      if (!name) return;
+      await api('/admin/categories', { method: 'POST', body: { name } });
+      renderCategories();
+    });
+  }
+
+  // ---------- Foydalanuvchilar ----------
+  const ALL_SECTIONS = [
+    ['bozorlik', 'Bozorlik'], ['daily_sales', 'Kunlik savdo'], ['expenses', 'Xarajatlar'],
+    ['cash', 'Kassa'], ['savdo', 'Savdo'], ['fot', 'FOT'], ['admin', 'Admin'], ['login_history', 'Kirish tarixi'],
+  ];
+
+  async function renderUsers() {
+    const { users } = await api('/admin/users');
+    document.getElementById('tab-content').innerHTML = `
+      <div class="card" style="padding:0;overflow:auto;margin-bottom:16px;">
+        <table>
+          <thead><tr><th>Foydalanuvchi</th><th>Rol</th><th>Bo'lim ruxsatlari</th><th>Bosh sahifada "Bugungi savdo"</th><th>Holat</th><th></th></tr></thead>
+          <tbody>${users.map((u) => `
+            <tr>
+              <td><b>${u.full_name}</b><div style="font-size:11px;color:var(--muted);">${u.username}</div></td>
+              <td>${u.role}</td>
+              <td>${(u.allowed_sections || []).map((s) => `<span class="pill pill-gray" style="margin-right:4px;">${(ALL_SECTIONS.find((x) => x[0] === s) || [s, s])[1]}</span>`).join('') || '—'}</td>
+              <td><button class="toggle ${u.show_sales_widget ? 'on' : 'off'}" data-toggle-widget="${u.id}"><span class="knob"></span></button>
+                  <span style="font-size:11px;color:var(--muted);margin-left:8px;">${u.show_sales_widget ? "Ko'rinadi" : 'Yashirilgan'}</span></td>
+              <td>${u.active ? '<span class="pill pill-green">Faol</span>' : '<span class="pill pill-amber">Nofaol</span>'}</td>
+              <td><span class="btn-link" data-edit-user="${u.id}">Tahrirlash</span></td>
+            </tr>`).join('')}</tbody>
+        </table>
+      </div>
+      <div class="card" style="max-width:480px;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px;" id="user-form-title">Yangi foydalanuvchi</div>
+        <input type="hidden" id="user-id">
+        <label>F.I.O</label>
+        <input type="text" id="user-fullname" style="margin-bottom:12px;">
+        <label>Login</label>
+        <input type="text" id="user-username" style="margin-bottom:12px;">
+        <label>Parol <span id="pass-hint" style="font-weight:400;color:var(--muted);"></span></label>
+        <input type="password" id="user-password" style="margin-bottom:12px;">
+        <label>Rol</label>
+        <select id="user-role" style="margin-bottom:12px;"><option value="employee">Xodim</option><option value="curator">Curator</option><option value="admin">Admin</option></select>
+        <label>Bo'lim ruxsatlari</label>
+        <div id="user-sections" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+          ${ALL_SECTIONS.map(([id, label]) => `<label style="display:flex;align-items:center;gap:5px;font-weight:500;font-size:12.5px;"><input type="checkbox" value="${id}" class="sec-check" style="width:auto;">${label}</label>`).join('')}
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="user-widget" checked style="width:auto;"> Bosh sahifada "Bugungi savdo" ko'rinsin</label>
+        <button class="btn-primary" id="user-save" style="width:100%;padding:12px;margin-top:14px;">Saqlash</button>
+        <button class="btn" id="user-cancel" style="width:100%;margin-top:8px;display:none;">Bekor qilish / Yangi</button>
+      </div>`;
+
+    function resetUserForm() {
+      document.getElementById('user-form-title').textContent = 'Yangi foydalanuvchi';
+      document.getElementById('user-id').value = '';
+      document.getElementById('user-fullname').value = '';
+      document.getElementById('user-username').value = '';
+      document.getElementById('user-password').value = '';
+      document.getElementById('pass-hint').textContent = '';
+      document.getElementById('user-role').value = 'employee';
+      document.querySelectorAll('.sec-check').forEach((c) => { c.checked = false; });
+      document.getElementById('user-widget').checked = true;
+      document.getElementById('user-cancel').style.display = 'none';
+    }
+
+    document.querySelectorAll('[data-toggle-widget]').forEach((btn) => btn.addEventListener('click', async () => {
+      const on = btn.classList.contains('on');
+      await api(`/admin/users/${btn.dataset.toggleWidget}`, { method: 'PUT', body: { show_sales_widget: !on } });
+      renderUsers();
+    }));
+
+    document.querySelectorAll('[data-edit-user]').forEach((el) => el.addEventListener('click', () => {
+      const u = users.find((x) => x.id === Number(el.dataset.editUser));
+      document.getElementById('user-form-title').textContent = `Tahrirlash — ${u.full_name}`;
+      document.getElementById('user-id').value = u.id;
+      document.getElementById('user-fullname').value = u.full_name;
+      document.getElementById('user-username').value = u.username;
+      document.getElementById('pass-hint').textContent = "(bo'sh qoldirsangiz o'zgarmaydi)";
+      document.getElementById('user-role').value = u.role;
+      document.querySelectorAll('.sec-check').forEach((c) => { c.checked = (u.allowed_sections || []).includes(c.value); });
+      document.getElementById('user-widget').checked = u.show_sales_widget;
+      document.getElementById('user-cancel').style.display = 'block';
+    }));
+    document.getElementById('user-cancel').addEventListener('click', resetUserForm);
+
+    document.getElementById('user-save').addEventListener('click', async () => {
+      const id = document.getElementById('user-id').value;
+      const allowed_sections = Array.from(document.querySelectorAll('.sec-check:checked')).map((c) => c.value);
+      const body = {
+        full_name: document.getElementById('user-fullname').value.trim(),
+        username: document.getElementById('user-username').value.trim(),
+        role: document.getElementById('user-role').value,
+        allowed_sections,
+        show_sales_widget: document.getElementById('user-widget').checked,
+      };
+      const password = document.getElementById('user-password').value;
+      if (password) body.password = password;
+      if (!body.full_name || !body.username) { alert('F.I.O va login kerak'); return; }
+      if (!id && !password) { alert('Yangi foydalanuvchi uchun parol kerak'); return; }
+      try {
+        if (id) await api(`/admin/users/${id}`, { method: 'PUT', body });
+        else await api('/admin/users', { method: 'POST', body });
+        renderUsers();
+      } catch (e) { alert(e.message); }
+    });
+  }
+
+  (async () => {
+    currentUser = await bootPage();
+    if (!currentUser) return;
+    if (currentUser.role !== 'admin' && currentUser.role !== 'curator') {
+      document.querySelector('.main').innerHTML = '<div class="empty">Bu bo\'limga ruxsatingiz yo\'q</div>';
+      return;
+    }
+    const initial = (window.location.hash || '#employees').slice(1);
+    await openTab(initial);
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Savdo — Mondo Region</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="assets/logo.png">
+</head>
+<body>
+<div class="app-shell">
+  <div class="sidebar" id="sidebar-root"></div>
+  <div class="main">
+    <div class="page-title">Savdo</div>
+    <div class="page-sub">Kassa summasi dinamikasi (yuborilgan kunlar bo'yicha)</div>
+
+    <div class="grid-3" style="margin-bottom:20px;">
+      <div class="card"><div class="kpi-label">O'rtacha kunlik</div><div class="kpi-value" id="avg-val">—</div></div>
+      <div class="card"><div class="kpi-label">Eng yuqori</div><div class="kpi-value" id="max-val">—</div></div>
+      <div class="card"><div class="kpi-label">Eng past</div><div class="kpi-value" id="min-val">—</div></div>
+    </div>
+
+    <div class="card">
+      <svg id="chart" viewBox="0 0 900 320" style="width:100%;height:320px;"></svg>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/nav.js"></script>
+<script>
+  function drawChart(series) {
+    const svg = document.getElementById('chart');
+    if (!series.length) { svg.innerHTML = '<text x="450" y="160" text-anchor="middle" fill="#6b6a63" font-size="14">Hali yuborilgan kassa ma\'lumotlari yo\'q</text>'; return; }
+
+    const W = 900, H = 320, PAD = 40;
+    const values = series.map((s) => Number(s.jami));
+    const maxV = Math.max(...values) * 1.1 || 1;
+    const minV = 0;
+    const stepX = (W - PAD * 2) / Math.max(series.length - 1, 1);
+
+    const points = values.map((v, i) => {
+      const x = PAD + i * stepX;
+      const y = H - PAD - ((v - minV) / (maxV - minV)) * (H - PAD * 2);
+      return [x, y];
+    });
+
+    const path = points.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    const area = path + ` L${points[points.length - 1][0].toFixed(1)},${H - PAD} L${points[0][0].toFixed(1)},${H - PAD} Z`;
+
+    const gridLines = [0, 0.25, 0.5, 0.75, 1].map((t) => {
+      const y = H - PAD - t * (H - PAD * 2);
+      return `<line x1="${PAD}" y1="${y}" x2="${W - PAD}" y2="${y}" stroke="#efeee8" stroke-width="1"/>`;
+    }).join('');
+
+    const dots = points.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="#0b1020"><title>${series[i].business_date}: ${fmtMoney(values[i])}</title></circle>`).join('');
+    const labels = series.map((s, i) => i % Math.ceil(series.length / 8 || 1) === 0
+      ? `<text x="${points[i][0]}" y="${H - 10}" text-anchor="middle" font-size="10" fill="#6b6a63">${s.business_date.slice(5)}</text>` : '').join('');
+
+    svg.innerHTML = `
+      ${gridLines}
+      <path d="${area}" fill="#f5c518" opacity="0.12"/>
+      <path d="${path}" fill="none" stroke="#0b1020" stroke-width="2.5"/>
+      ${dots}
+      ${labels}
+    `;
+  }
+
+  (async () => {
+    const user = await bootPage();
+    if (!user) return;
+    const { series, average, max, min } = await api('/sales?days=14');
+    document.getElementById('avg-val').textContent = `${fmtMoney(average)} so'm`;
+    document.getElementById('max-val').textContent = `${fmtMoney(max)} so'm`;
+    document.getElementById('min-val').textContent = `${fmtMoney(min)} so'm`;
+    drawChart(series);
+  })();
+</script>
+</body>
+</html>

@@ -76,14 +76,17 @@
   let entryDate = null;
 
   function rowTemplate(id) {
-    const options = ingredients.map((i) => `<option value="${i.id}" data-unit="${i.unit}">${i.name}</option>`).join('');
     return `
-      <div class="bz-row" data-row="${id}" style="display:grid;grid-template-columns:36% 16% 12% 18% 14% 4%;gap:8px;align-items:center;background:var(--paper);border-radius:10px;padding:9px 8px;margin-bottom:8px;">
-        <select class="ing-select"><option value="">Ingredient tanlang</option>${options}</select>
+      <div class="bz-row" data-row="${id}" data-driver="price" style="display:grid;grid-template-columns:32% 14% 9% 19% 19% 4%;gap:8px;align-items:center;background:var(--paper);border-radius:10px;padding:9px 8px;margin-bottom:8px;position:relative;">
+        <div style="position:relative;">
+          <input type="text" class="ing-input" placeholder="Ingredient qidiring yoki tanlang" autocomplete="off">
+          <input type="hidden" class="ing-id">
+          <div class="ing-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:30;max-height:220px;overflow:auto;"></div>
+        </div>
         <input type="text" class="qty" placeholder="Miqdor">
         <div class="unit" style="font-size:13px;color:var(--muted);"></div>
         <input type="text" class="price" placeholder="Narx (so'm)">
-        <div class="sum" style="font-size:13.5px;font-weight:600;">0</div>
+        <input type="text" class="sum" placeholder="Summa (so'm)">
         <div style="text-align:center;color:#b0aea5;cursor:pointer;" class="remove-row">✕</div>
       </div>`;
   }
@@ -97,16 +100,87 @@
     validateAndTotal();
   }
 
+  function highlightMatch(name, q) {
+    if (!q) return name;
+    const idx = name.toLowerCase().indexOf(q.toLowerCase());
+    if (idx === -1) return name;
+    return name.slice(0, idx) + `<span style="color:var(--purple);font-weight:700;">${name.slice(idx, idx + q.length)}</span>` + name.slice(idx + q.length);
+  }
+
+  // Ingredient qidiruv (autocomplete): yozgan sari ro'yxat toraya boradi
+  // (nom ichida so'ralgan harflar bo'lsa yetarli), yoki bo'sh holda bosilsa
+  // to'liq ro'yxat ochiladi. Tanlangan ingredient .ing-id ga yoziladi —
+  // shu maydon bo'sh bo'lsa qator "to'liq emas" deb hisoblanadi.
+  function renderIngDropdown(row, query) {
+    const dropdown = row.querySelector('.ing-dropdown');
+    const q = (query || '').trim().toLowerCase();
+    const matches = q ? ingredients.filter((i) => i.name.toLowerCase().includes(q)) : ingredients;
+    dropdown.innerHTML = matches.length
+      ? matches.map((i) => `<div class="ing-option" data-id="${i.id}" data-name="${i.name}" data-unit="${i.unit}" style="padding:10px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid #f0efe9;">${highlightMatch(i.name, q)}</div>`).join('')
+      : `<div style="padding:10px 12px;font-size:12.5px;color:var(--muted);">Hech narsa topilmadi — admin/curator panelda qo'shing</div>`;
+    dropdown.style.display = 'block';
+    dropdown.querySelectorAll('.ing-option').forEach((opt) => {
+      opt.addEventListener('mousedown', (e) => {
+        e.preventDefault(); // input blur'dan oldin click ishlashi uchun
+        selectIngredient(row, opt.dataset.id, opt.dataset.name, opt.dataset.unit);
+      });
+    });
+  }
+
+  function selectIngredient(row, id, name, unit) {
+    row.querySelector('.ing-input').value = name;
+    row.querySelector('.ing-id').value = id;
+    row.querySelector('.unit').textContent = unit;
+    row.querySelector('.ing-dropdown').style.display = 'none';
+    row.querySelector('.qty').focus();
+    validateAndTotal();
+  }
+
+  // Ikki tomonlama hisoblash: Narx kiritilsa -> Summa = Miqdor x Narx.
+  // Summa kiritilsa -> Narx = Summa / Miqdor. Miqdor o'zgarganda esa, oxirgi
+  // qo'lda kiritilgan maydon (driver) asosiy hisoblanib, ikkinchisi qayta hisoblanadi.
   function wireRow(row) {
-    const select = row.querySelector('.ing-select');
+    const ingInput = row.querySelector('.ing-input');
+    const ingId = row.querySelector('.ing-id');
     const qty = row.querySelector('.qty');
     const price = row.querySelector('.price');
-    const unitEl = row.querySelector('.unit');
+    const sum = row.querySelector('.sum');
     attachMoneyMask(price);
-    const updateUnit = () => { unitEl.textContent = select.selectedOptions[0]?.dataset.unit || ''; };
-    [select, qty, price].forEach((el) => el.addEventListener('input', () => { updateUnit(); validateAndTotal(); }));
-    select.addEventListener('change', () => { updateUnit(); validateAndTotal(); });
-    updateUnit();
+    attachMoneyMask(sum);
+
+    const recalc = () => {
+      const q = Number(qty.value) || 0;
+      const driver = row.dataset.driver;
+      if (driver === 'sum') {
+        const s = moneyValue(sum);
+        setMoneyValue(price, q > 0 ? Math.round(s / q) : 0);
+      } else {
+        const p = moneyValue(price);
+        setMoneyValue(sum, q * p);
+      }
+    };
+
+    ingInput.addEventListener('input', () => {
+      ingId.value = ''; // qayta yozilsa, aniq tanlanmaguncha qator "to'liq emas" hisoblanadi
+      renderIngDropdown(row, ingInput.value);
+      validateAndTotal();
+    });
+    ingInput.addEventListener('focus', () => renderIngDropdown(row, ingInput.value));
+    ingInput.addEventListener('blur', () => {
+      setTimeout(() => {
+        row.querySelector('.ing-dropdown').style.display = 'none';
+        if (!ingId.value) {
+          const exact = ingredients.find((i) => i.name.toLowerCase() === ingInput.value.trim().toLowerCase());
+          if (exact) selectIngredient(row, exact.id, exact.name, exact.unit);
+          else validateAndTotal();
+        }
+      }, 150);
+    });
+
+    qty.addEventListener('input', () => { recalc(); validateAndTotal(); });
+    price.addEventListener('input', () => { row.dataset.driver = 'price'; recalc(); validateAndTotal(); });
+    sum.addEventListener('input', () => { row.dataset.driver = 'sum'; recalc(); validateAndTotal(); });
+
     row.querySelector('.remove-row').addEventListener('click', () => { row.remove(); validateAndTotal(); });
   }
 
@@ -117,12 +191,10 @@
     let hasAnyRow = false;
     document.querySelectorAll('.bz-row').forEach((row) => {
       hasAnyRow = true;
-      const ingId = row.querySelector('.ing-select').value;
+      const ingIdVal = row.querySelector('.ing-id').value;
       const qty = Number(row.querySelector('.qty').value) || 0;
-      const price = moneyValue(row.querySelector('.price'));
-      const rowSum = qty * price;
-      row.querySelector('.sum').textContent = fmtMoney(rowSum);
-      const rowValid = ingId && qty > 0;
+      const rowSum = moneyValue(row.querySelector('.sum'));
+      const rowValid = ingIdVal && qty > 0;
       row.style.background = rowValid ? 'var(--paper)' : '#fdeceb';
       row.style.border = rowValid ? 'none' : '1px solid #f3c9c4';
       if (!rowValid) allValid = false;
@@ -146,7 +218,7 @@
   function collectItems() {
     const items = [];
     document.querySelectorAll('.bz-row').forEach((row) => {
-      const ingredient_id = Number(row.querySelector('.ing-select').value);
+      const ingredient_id = Number(row.querySelector('.ing-id').value);
       const quantity = Number(row.querySelector('.qty').value);
       const unit_price = moneyValue(row.querySelector('.price'));
       if (ingredient_id && quantity > 0) items.push({ ingredient_id, quantity, unit_price: unit_price || 0 });
@@ -172,7 +244,10 @@
       <div class="card" style="margin-bottom:12px;${e.status === 'pending' && canApprove ? 'border:1.5px solid var(--purple);' : ''}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
           <div style="font-size:13.5px;font-weight:600;">${e.business_date}</div>
-          ${statusPill(e.status)}
+          <div style="display:flex;align-items:center;gap:10px;">
+            ${statusPill(e.status)}
+            ${canApprove ? `<span class="btn-danger-text" data-delete="${e.id}" data-status="${e.status}" style="cursor:pointer;">O'chirish</span>` : ''}
+          </div>
         </div>
         <div style="font-size:12.5px;color:var(--muted);margin-bottom:${e.items ? '10' : '2'}px;">${fmtMoney(e.total_amount)} so'm · ${e.created_by_name || ''}</div>
         ${e.items ? `
@@ -205,6 +280,15 @@
     document.querySelectorAll('[data-print]').forEach((btn) => btn.addEventListener('click', async () => {
       const { entry, items } = await api(`/bozorlik/${btn.dataset.print}`);
       await printBozorlikReceipt(entry, items, null);
+    }));
+    document.querySelectorAll('[data-delete]').forEach((btn) => btn.addEventListener('click', async () => {
+      const isPosted = btn.dataset.status === 'posted';
+      const msg = isPosted
+        ? "Bu bozorlik allaqachon Poster'ga kiritilgan — bizning tizimdan o'chiriladi, lekin Poster'dagi yozuv o'zi o'chmaydi. Davom etilsinmi?"
+        : "Bu bozorlikni butunlay o'chirishga ishonchingiz komilmi?";
+      if (!confirm(msg)) return;
+      try { await api(`/bozorlik/${btn.dataset.delete}`, { method: 'DELETE' }); loadEntries(); }
+      catch (e) { alert(e.message); }
     }));
   }
 

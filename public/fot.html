@@ -77,7 +77,7 @@
       const dayCells = days.map((d) => `<td>${r.daily[d] ? fmtMoney(r.daily[d]) : '—'}</td>`).join('');
       const fiksaCell = r.fiksa_type === 'summa' ? fmtMoney(r.fiksa_amount) : (r.fiksa_type === 'kunlik' ? 'Kunlik' : 'Haftalik');
       const raschetCell = currentUser.role === 'admin'
-        ? `<input type="number" class="raschet-input" data-emp="${r.employee_id}" value="${r.raschet || ''}" placeholder="0">`
+        ? `<input type="text" class="raschet-input" data-emp="${r.employee_id}" value="${r.raschet ? fmtMoney(r.raschet) : ''}" placeholder="0">`
         : fmtMoney(r.raschet);
       bodyHtml += `<tr>
         <td class="left">${r.full_name}</td>
@@ -102,11 +102,12 @@
 
     if (currentUser.role === 'admin') {
       document.querySelectorAll('.raschet-input').forEach((inp) => {
+        attachMoneyMask(inp);
         let t = null;
         inp.addEventListener('input', () => {
           clearTimeout(t);
           t = setTimeout(async () => {
-            await api('/fot/raschet', { method: 'PUT', body: { employee_id: Number(inp.dataset.emp), period, raschet_amount: Number(inp.value) || 0 } });
+            await api('/fot/raschet', { method: 'PUT', body: { employee_id: Number(inp.dataset.emp), period, raschet_amount: moneyValue(inp) } });
           }, 600);
         });
       });

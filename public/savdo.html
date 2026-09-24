@@ -13,6 +13,13 @@
   <div class="sidebar" id="sidebar-root"></div>
   <div class="main">
     <div class="page-title">Savdo</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      <span style="font-size:11.5px;color:var(--muted);">Dan</span>
+      <input type="date" id="sv-from">
+      <span style="font-size:11.5px;color:var(--muted);">Gacha</span>
+      <input type="date" id="sv-to">
+      <a id="sv-export" href="#"><button style="font-size:11.5px;padding:7px 12px;">📊 Excel</button></a>
+    </div>
     <div class="page-sub">Kassa summasi dinamikasi (yuborilgan kunlar bo'yicha)</div>
 
     <div class="grid-3" style="margin-bottom:20px;">
@@ -67,14 +74,27 @@
     `;
   }
 
-  (async () => {
-    const user = await bootPage();
-    if (!user) return;
-    const { series, average, max, min } = await api('/sales?days=14');
+  async function load() {
+    const from = document.getElementById('sv-from').value;
+    const to = document.getElementById('sv-to').value;
+    const q = `?from=${from}&to=${to}`;
+    document.getElementById('sv-export').href = `/api/sales/export/xlsx${q}`;
+    const { series, average, max, min } = await api(`/sales${q}`);
     document.getElementById('avg-val').textContent = `${fmtMoney(average)} so'm`;
     document.getElementById('max-val').textContent = `${fmtMoney(max)} so'm`;
     document.getElementById('min-val').textContent = `${fmtMoney(min)} so'm`;
     drawChart(series);
+  }
+
+  (async () => {
+    const user = await bootPage();
+    if (!user) return;
+    const today = await api('/dashboard/summary').then((s) => s.business_date);
+    document.getElementById('sv-to').value = today;
+    document.getElementById('sv-from').value = new Date(Date.now() - 13 * 86400000).toISOString().slice(0, 10);
+    document.getElementById('sv-from').addEventListener('change', load);
+    document.getElementById('sv-to').addEventListener('change', load);
+    await load();
   })();
 </script>
 </body>

@@ -14,7 +14,13 @@
   <div class="main">
     <div style="display:flex;align-items:baseline;justify-content:space-between;">
       <div class="page-title">Kunlik savdo</div>
-      <div style="font-size:13px;color:var(--muted);" id="range-label"></div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:11.5px;color:var(--muted);">Dan</span>
+        <input type="date" id="ds-from">
+        <span style="font-size:11.5px;color:var(--muted);">Gacha</span>
+        <input type="date" id="ds-to">
+        <a id="ds-export" href="#"><button style="font-size:11.5px;padding:7px 12px;">📊 Excel</button></a>
+      </div>
     </div>
     <div class="page-sub">Kategoriyalar bo'yicha sotilgan miqdor (dona)</div>
 
@@ -56,10 +62,14 @@
   let selectedIds = [];
 
   async function loadTable() {
-    const q = selectedIds.length ? `?category_ids=${selectedIds.join(',')}&days=7` : '?days=7';
+    const from = document.getElementById('ds-from').value;
+    const to = document.getElementById('ds-to').value;
+    const catQ = selectedIds.length ? `&category_ids=${selectedIds.join(',')}` : '';
+    const q = `?from=${from}&to=${to}${catQ}`;
     const { categories, selected_categories, table } = await api(`/daily-sales${q}`);
     allCategories = categories;
     if (!selectedIds.length) selectedIds = selected_categories.map((c) => c.id);
+    document.getElementById('ds-export').href = `/api/daily-sales/export/xlsx${q}`;
     renderChips();
 
     const head = `<thead><tr><th>Sana</th>${selected_categories.map((c) => `<th>${c.name} (dona)</th>`).join('')}<th>Jami (dona)</th></tr></thead>`;
@@ -81,19 +91,38 @@
   }
 
   async function loadMgmt() {
-    document.getElementById('cat-list').innerHTML = allCategories.map((c) => `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:8px;background:var(--paper);">
-        <span style="font-size:13px;">${c.name}</span>
-        <span class="btn-danger-text" data-del-cat="${c.id}" style="cursor:pointer;">O'chirish</span>
-      </div>`).join('');
-    document.querySelectorAll('[data-del-cat]').forEach((el) => el.addEventListener('click', async () => {
-      if (!confirm("O'chirilsinmi?")) return;
-      await api(`/admin/categories/${el.dataset.delCat}`, { method: 'DELETE' });
-      const { categories } = await api('/daily-sales?days=7');
-      allCategories = categories;
-      loadMgmt();
-      loadTable();
-    }));
+    function drawCatList() {
+      document.getElementById('cat-list').innerHTML = allCategories.map((c) => `
+        <div id="dsc-row-${c.id}" style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:8px;background:var(--paper);">
+          <span style="font-size:13px;">${c.name}</span>
+          <span><span class="btn-link" data-edit-cat="${c.id}">Tahrirlash</span> · <span class="btn-danger-text" data-del-cat="${c.id}" style="cursor:pointer;">O'chirish</span></span>
+        </div>`).join('');
+      document.querySelectorAll('[data-del-cat]').forEach((el) => el.addEventListener('click', async () => {
+        if (!confirm("O'chirilsinmi?")) return;
+        await api(`/admin/categories/${el.dataset.delCat}`, { method: 'DELETE' });
+        const { categories } = await api('/daily-sales?from=' + document.getElementById('ds-from').value + '&to=' + document.getElementById('ds-to').value);
+        allCategories = categories;
+        loadMgmt();
+        loadTable();
+      }));
+      document.querySelectorAll('[data-edit-cat]').forEach((el) => el.addEventListener('click', () => {
+        const c = allCategories.find((x) => x.id === Number(el.dataset.editCat));
+        document.getElementById(`dsc-row-${c.id}`).innerHTML = `
+          <input type="text" class="dsc-edit-name" value="${c.name}" style="flex:1;margin-right:8px;">
+          <span><span class="btn-link" data-save-cat="${c.id}">Saqlash</span> · <span class="btn-link" data-cancel-cat="${c.id}">Bekor</span></span>`;
+        document.querySelector(`[data-save-cat="${c.id}"]`).addEventListener('click', async () => {
+          const name = document.querySelector(`#dsc-row-${c.id} .dsc-edit-name`).value.trim();
+          if (!name) return;
+          await api(`/admin/categories/${c.id}`, { method: 'PUT', body: { name } });
+          const { categories } = await api('/daily-sales?from=' + document.getElementById('ds-from').value + '&to=' + document.getElementById('ds-to').value);
+          allCategories = categories;
+          loadMgmt();
+          loadTable();
+        });
+        document.querySelector(`[data-cancel-cat="${c.id}"]`).addEventListener('click', drawCatList);
+      }));
+    }
+    drawCatList();
 
     try {
       const { products } = await api('/admin/categories/unmapped-products');
@@ -116,7 +145,11 @@
   (async () => {
     const user = await bootPage();
     if (!user) return;
-    document.getElementById('range-label').textContent = 'Oxirgi 7 kun';
+    const today = await api('/dashboard/summary').then((s) => s.business_date);
+    document.getElementById('ds-to').value = today;
+    document.getElementById('ds-from').value = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+    document.getElementById('ds-from').addEventListener('change', loadTable);
+    document.getElementById('ds-to').addEventListener('change', loadTable);
 
     await loadTable();
 
@@ -129,7 +162,7 @@
         if (!input.value.trim()) return;
         await api('/admin/categories', { method: 'POST', body: { name: input.value.trim() } });
         input.value = '';
-        const { categories } = await api('/daily-sales?days=7');
+        const { categories } = await api('/daily-sales?from=' + document.getElementById('ds-from').value + '&to=' + document.getElementById('ds-to').value);
         allCategories = categories;
         loadMgmt();
       });

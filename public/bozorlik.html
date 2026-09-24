@@ -12,35 +12,55 @@
 <div class="app-shell">
   <div class="sidebar" id="sidebar-root"></div>
   <div class="main">
-    <div class="page-title">Bozorlik kiritish</div>
-    <div class="page-sub" id="date-sub"></div>
+    <div style="display:flex;align-items:baseline;justify-content:space-between;">
+      <div class="page-title">Bozorlik kiritish</div>
+      <div style="display:flex;align-items:center;gap:8px;" id="date-wrap">
+        <span style="font-size:12px;color:var(--muted);">Sana:</span>
+        <input type="date" id="date-input">
+      </div>
+    </div>
+    <div class="page-sub">Postavshik: <b>Bozor (Закупка)</b> · Poster'dagi ingredientlar ro'yxatidan tanlanadi</div>
 
-    <div style="display:flex;gap:24px;align-items:flex-start;">
-      <div style="flex:1.6;">
+    <div style="display:flex;gap:24px;">
+      <div style="flex:1.6;min-width:0;">
         <div class="card">
           <div id="rows"></div>
           <button type="button" class="btn-ghost" id="add-row" style="margin-top:14px;">+ Ingredient qo'shish</button>
-          <div style="margin-top:6px;font-size:12px;color:var(--muted);">Ro'yxatda yo'q ingredient kerakmi? Admin/curator panelda qo'shadi.</div>
+          <div style="margin-top:6px;font-size:12px;color:var(--muted);">Ro'yxatda yo'q ingredient kerakmi? Admin/curator panelda Poster'dan sinxronlaydi yoki qo'lda qo'shadi.</div>
 
           <div style="margin-top:18px;">
             <label>Kommentariya</label>
             <textarea id="comment" rows="2" placeholder="Masalan: bozor narxi ko'tarilgani sababli..."></textarea>
           </div>
 
+          <div id="validation-hint" class="error-box" style="display:none;"></div>
+
           <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px;padding-top:18px;border-top:1px solid var(--border);">
             <div>
               <div style="font-size:12px;color:var(--muted);">Jami summa</div>
               <div class="display" style="font-size:22px;font-weight:700;" id="total">0 so'm</div>
             </div>
-            <button class="btn-primary" id="submit-btn">Yuborish</button>
+            <div style="display:flex;gap:10px;">
+              <button id="print-draft-btn" style="font-size:13px;">🖨️ Chop etish</button>
+              <button class="btn-primary" id="submit-btn">Yuborish</button>
+            </div>
           </div>
           <div id="err" class="error-box" style="display:none;"></div>
         </div>
       </div>
 
-      <div style="flex:1;">
-        <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:16px;margin-bottom:14px;">Oxirgi yuborilgan bozorliklar</div>
-        <div id="entries"></div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:16px;">Bozorliklar tarixi</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;">
+          <span style="font-size:11.5px;color:var(--muted);">Dan</span>
+          <input type="date" id="h-from">
+          <span style="font-size:11.5px;color:var(--muted);">Gacha</span>
+          <input type="date" id="h-to">
+          <a id="export-link" href="#"><button style="font-size:11.5px;padding:6px 12px;">📊 Excel</button></a>
+        </div>
+        <div id="entries" style="max-height:560px;overflow:auto;"></div>
       </div>
     </div>
   </div>
@@ -48,18 +68,21 @@
 
 <script src="js/api.js"></script>
 <script src="js/nav.js"></script>
+<script src="js/escpos.js"></script>
 <script>
   let ingredients = [];
   let rowCount = 0;
+  let currentUser = null;
+  let entryDate = null;
 
   function rowTemplate(id) {
     const options = ingredients.map((i) => `<option value="${i.id}" data-unit="${i.unit}">${i.name}</option>`).join('');
     return `
       <div class="bz-row" data-row="${id}" style="display:grid;grid-template-columns:36% 16% 12% 18% 14% 4%;gap:8px;align-items:center;background:var(--paper);border-radius:10px;padding:9px 8px;margin-bottom:8px;">
-        <select class="ing-select">${options}</select>
-        <input type="number" class="qty" placeholder="Miqdor" min="0" step="0.01">
+        <select class="ing-select"><option value="">Ingredient tanlang</option>${options}</select>
+        <input type="text" class="qty" placeholder="Miqdor">
         <div class="unit" style="font-size:13px;color:var(--muted);"></div>
-        <input type="number" class="price" placeholder="Narx (so'm)" min="0" step="1">
+        <input type="text" class="price" placeholder="Narx (so'm)">
         <div class="sum" style="font-size:13.5px;font-weight:600;">0</div>
         <div style="text-align:center;color:#b0aea5;cursor:pointer;" class="remove-row">✕</div>
       </div>`;
@@ -71,7 +94,7 @@
     div.innerHTML = rowTemplate(rowCount);
     document.getElementById('rows').appendChild(div.firstElementChild);
     wireRow(document.querySelector(`.bz-row[data-row="${rowCount}"]`));
-    updateTotal();
+    validateAndTotal();
   }
 
   function wireRow(row) {
@@ -79,28 +102,45 @@
     const qty = row.querySelector('.qty');
     const price = row.querySelector('.price');
     const unitEl = row.querySelector('.unit');
-    const sumEl = row.querySelector('.sum');
+    attachMoneyMask(price);
     const updateUnit = () => { unitEl.textContent = select.selectedOptions[0]?.dataset.unit || ''; };
-    const updateSum = () => {
-      const s = (Number(qty.value) || 0) * (Number(price.value) || 0);
-      sumEl.textContent = fmtMoney(s);
-      updateTotal();
-    };
-    select.addEventListener('change', () => { updateUnit(); updateSum(); });
-    qty.addEventListener('input', updateSum);
-    price.addEventListener('input', updateSum);
+    [select, qty, price].forEach((el) => el.addEventListener('input', () => { updateUnit(); validateAndTotal(); }));
+    select.addEventListener('change', () => { updateUnit(); validateAndTotal(); });
     updateUnit();
-    row.querySelector('.remove-row').addEventListener('click', () => { row.remove(); updateTotal(); });
+    row.querySelector('.remove-row').addEventListener('click', () => { row.remove(); validateAndTotal(); });
   }
 
-  function updateTotal() {
+  // Qat'iy validatsiya: har bir qatorda ingredient+miqdor+narx to'liq bo'lmasa Yuborish bloklanadi.
+  function validateAndTotal() {
     let total = 0;
+    let allValid = true;
+    let hasAnyRow = false;
     document.querySelectorAll('.bz-row').forEach((row) => {
+      hasAnyRow = true;
+      const ingId = row.querySelector('.ing-select').value;
       const qty = Number(row.querySelector('.qty').value) || 0;
-      const price = Number(row.querySelector('.price').value) || 0;
-      total += qty * price;
+      const price = moneyValue(row.querySelector('.price'));
+      const rowSum = qty * price;
+      row.querySelector('.sum').textContent = fmtMoney(rowSum);
+      const rowValid = ingId && qty > 0;
+      row.style.background = rowValid ? 'var(--paper)' : '#fdeceb';
+      row.style.border = rowValid ? 'none' : '1px solid #f3c9c4';
+      if (!rowValid) allValid = false;
+      total += rowSum;
     });
     document.getElementById('total').textContent = `${fmtMoney(total)} so'm`;
+
+    const hint = document.getElementById('validation-hint');
+    const submitBtn = document.getElementById('submit-btn');
+    if (!hasAnyRow || !allValid) {
+      hint.style.display = 'block';
+      hint.textContent = !hasAnyRow ? 'Kamida bitta ingredient qatori qo\'shing' : 'Barcha qatorlarda ingredient va miqdor to\'ldirilishi shart — Yuborish bloklangan';
+      submitBtn.disabled = true;
+    } else {
+      hint.style.display = 'none';
+      submitBtn.disabled = false;
+    }
+    return { valid: hasAnyRow && allValid, total };
   }
 
   function collectItems() {
@@ -108,7 +148,7 @@
     document.querySelectorAll('.bz-row').forEach((row) => {
       const ingredient_id = Number(row.querySelector('.ing-select').value);
       const quantity = Number(row.querySelector('.qty').value);
-      const unit_price = Number(row.querySelector('.price').value);
+      const unit_price = moneyValue(row.querySelector('.price'));
       if (ingredient_id && quantity > 0) items.push({ ingredient_id, quantity, unit_price: unit_price || 0 });
     });
     return items;
@@ -117,41 +157,72 @@
   function statusPill(status) {
     if (status === 'posted') return '<span class="pill pill-green">Posterga kiritildi</span>';
     if (status === 'approved') return '<span class="pill pill-amber">Tasdiqlangan</span>';
+    if (status === 'rejected') return '<span class="pill pill-gray">Rad etilgan</span>';
     return '<span class="pill pill-amber">Ko\'rib chiqilmoqda</span>';
   }
 
-  async function loadEntries(user) {
-    const { entries } = await api('/bozorlik');
-    const canApprove = user.role === 'admin' || user.role === 'curator';
+  async function loadEntries() {
+    const from = document.getElementById('h-from').value;
+    const to = document.getElementById('h-to').value;
+    const { entries } = await api(`/bozorlik?from=${from}&to=${to}`);
+    document.getElementById('export-link').href = `/api/bozorlik/export/xlsx?from=${from}&to=${to}`;
+    const canApprove = currentUser.role === 'admin' || currentUser.role === 'curator';
+
     document.getElementById('entries').innerHTML = entries.length ? entries.map((e) => `
-      <div class="card" style="margin-bottom:12px;">
+      <div class="card" style="margin-bottom:12px;${e.status === 'pending' && canApprove ? 'border:1.5px solid var(--purple);' : ''}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
           <div style="font-size:13.5px;font-weight:600;">${e.business_date}</div>
           ${statusPill(e.status)}
         </div>
-        <div style="font-size:12.5px;color:var(--muted);margin-bottom:${canApprove ? '10' : '0'}px;">${fmtMoney(e.total_amount)} so'm · ${e.created_by_name || ''}</div>
-        ${canApprove && e.status === 'pending' ? `<button class="btn" data-approve="${e.id}" style="font-size:12px;padding:6px 12px;">Tasdiqlash</button>` : ''}
-        ${canApprove && e.status === 'approved' ? `<button class="btn-primary" data-post="${e.id}" style="font-size:12px;padding:6px 12px;">Posterga kiritish</button>` : ''}
+        <div style="font-size:12.5px;color:var(--muted);margin-bottom:${e.items ? '10' : '2'}px;">${fmtMoney(e.total_amount)} so'm · ${e.created_by_name || ''}</div>
+        ${e.items ? `
+          <div style="font-size:10.5px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">Sotib olingan ingredientlar</div>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;">
+            ${e.items.map((it) => `<div style="display:flex;justify-content:space-between;font-size:12px;"><span>${it.ingredient_name} — ${it.quantity} ${it.unit} × ${fmtMoney(it.unit_price)}</span><span style="font-weight:600;">${fmtMoney(it.sum)}</span></div>`).join('')}
+          </div>` : ''}
+        ${canApprove && e.status === 'pending' ? `
+          <div style="display:flex;gap:8px;">
+            <button data-approve="${e.id}" style="flex:1;font-size:12px;padding:8px;">Tasdiqlash</button>
+            <button data-reject="${e.id}" style="flex:1;font-size:12px;padding:8px;border-color:#f3c9c4;color:var(--red-fg);">Rad etish</button>
+          </div>` : ''}
+        ${canApprove && e.status === 'approved' ? `<button class="btn-primary" data-post="${e.id}" style="font-size:12px;padding:8px 12px;width:100%;">Posterga kiritish</button>` : ''}
+        ${canApprove && e.status === 'posted' ? `<button data-print="${e.id}" style="font-size:12px;padding:8px 12px;width:100%;">🖨️ Chekni chop etish</button>` : ''}
       </div>`).join('') : '<div class="empty">Hali bozorlik yozuvlari yo\'q</div>';
 
     document.querySelectorAll('[data-approve]').forEach((btn) => btn.addEventListener('click', async () => {
       await api(`/bozorlik/${btn.dataset.approve}/approve`, { method: 'POST' });
-      loadEntries(user);
+      loadEntries();
+    }));
+    document.querySelectorAll('[data-reject]').forEach((btn) => btn.addEventListener('click', async () => {
+      if (!confirm("Bu bozorlikni rad etishga ishonchingiz komilmi?")) return;
+      await api(`/bozorlik/${btn.dataset.reject}/reject`, { method: 'POST' });
+      loadEntries();
     }));
     document.querySelectorAll('[data-post]').forEach((btn) => btn.addEventListener('click', async () => {
-      try {
-        await api(`/bozorlik/${btn.dataset.post}/post-to-poster`, { method: 'POST' });
-        loadEntries(user);
-      } catch (e) {
-        alert(e.message);
-      }
+      try { await api(`/bozorlik/${btn.dataset.post}/post-to-poster`, { method: 'POST' }); loadEntries(); }
+      catch (e) { alert(e.message); }
+    }));
+    document.querySelectorAll('[data-print]').forEach((btn) => btn.addEventListener('click', async () => {
+      const { entry, items } = await api(`/bozorlik/${btn.dataset.print}`);
+      await printBozorlikReceipt(entry, items, null);
     }));
   }
 
   (async () => {
-    const user = await bootPage();
-    if (!user) return;
-    document.getElementById('date-sub').textContent = new Date().toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' });
+    currentUser = await bootPage();
+    if (!currentUser) return;
+    const isAdminOrCurator = currentUser.role === 'admin' || currentUser.role === 'curator';
+
+    const today = await api('/dashboard/summary').then((s) => s.business_date);
+    entryDate = today;
+    document.getElementById('date-input').value = today;
+    document.getElementById('date-wrap').style.display = isAdminOrCurator ? 'flex' : 'none';
+    document.getElementById('date-input').addEventListener('change', (e) => { entryDate = e.target.value; });
+
+    document.getElementById('h-to').value = today;
+    document.getElementById('h-from').value = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+    document.getElementById('h-from').addEventListener('change', loadEntries);
+    document.getElementById('h-to').addEventListener('change', loadEntries);
 
     const ingRes = await api('/admin/ingredients').catch(() => ({ ingredients: [] }));
     ingredients = ingRes.ingredients || [];
@@ -161,29 +232,36 @@
     } else {
       addRow();
     }
-
     document.getElementById('add-row').addEventListener('click', addRow);
 
+    document.getElementById('print-draft-btn').addEventListener('click', async () => {
+      const items = collectItems().map((it) => {
+        const ing = ingredients.find((i) => i.id === it.ingredient_id);
+        return { ingredient_name: ing?.name || '', unit: ing?.unit || '', unit_price: it.unit_price, quantity: it.quantity, sum: it.quantity * it.unit_price };
+      });
+      const total = items.reduce((s, it) => s + it.sum, 0);
+      await printBozorlikReceipt({ business_date: entryDate, total_amount: total }, items, null);
+    });
+
     document.getElementById('submit-btn').addEventListener('click', async () => {
-      const items = collectItems();
+      const { valid } = validateAndTotal();
       const errBox = document.getElementById('err');
       errBox.style.display = 'none';
-      if (!items.length) { errBox.textContent = 'Kamida bitta ingredient kiriting'; errBox.style.display = 'block'; return; }
+      if (!valid) return;
       try {
-        await api('/bozorlik', { method: 'POST', body: { items, comment: document.getElementById('comment').value } });
+        await api('/bozorlik', { method: 'POST', body: { items: collectItems(), comment: document.getElementById('comment').value, business_date: entryDate } });
         document.getElementById('rows').innerHTML = '';
         rowCount = 0;
         addRow();
         document.getElementById('comment').value = '';
-        updateTotal();
-        loadEntries(user);
+        loadEntries();
       } catch (e) {
         errBox.textContent = e.message;
         errBox.style.display = 'block';
       }
     });
 
-    loadEntries(user);
+    loadEntries();
   })();
 </script>
 </body>

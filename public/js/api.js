@@ -29,6 +29,34 @@ function fmtMoney(n) {
   return v.toLocaleString('ru-RU').replace(/,/g, ' ');
 }
 
+// Pul kiritish maydonlari uchun: yozayotganda "100000" -> "100 000" ko'rinishida
+// bo'shliq bilan ajratib ko'rsatadi. type="text" input'larda ishlatiladi.
+function attachMoneyMask(input) {
+  if (!input || input.dataset.moneyMasked) return;
+  input.dataset.moneyMasked = '1';
+  input.setAttribute('inputmode', 'numeric');
+  input.addEventListener('input', () => {
+    const pos = input.selectionStart;
+    const before = input.value.length;
+    const raw = input.value.replace(/[^\d]/g, '');
+    input.value = raw ? Number(raw).toLocaleString('ru-RU').replace(/,/g, ' ') : '';
+    const after = input.value.length;
+    const newPos = Math.max(0, (pos || after) + (after - before));
+    try { input.setSelectionRange(newPos, newPos); } catch (e) { /* ignore */ }
+  });
+}
+
+function moneyValue(input) {
+  if (!input) return 0;
+  return Number(String(input.value || '').replace(/[^\d]/g, '')) || 0;
+}
+
+function setMoneyValue(input, n) {
+  if (!input) return;
+  const v = Math.round(Number(n) || 0);
+  input.value = v ? fmtMoney(v) : '';
+}
+
 function fmtDate(d) {
   const [y, m, day] = String(d).split('-');
   return `${day}.${m.slice(0, 2) === '0' + m[1] ? m : m}`;

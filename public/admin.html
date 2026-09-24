@@ -96,9 +96,9 @@
               <option value="summa">Summa</option><option value="kunlik">Kunlik</option><option value="haftalik">Haftalik</option>
             </select>
             <label>Fiksa summasi (so'm)</label>
-            <input type="number" id="emp-fiksa-amount" placeholder="5000000" style="margin-bottom:14px;">
+            <input type="text" id="emp-fiksa-amount" placeholder="5 000 000" style="margin-bottom:14px;">
             <label>Bonus (ixtiyoriy)</label>
-            <input type="number" id="emp-bonus" placeholder="0" style="margin-bottom:14px;">
+            <input type="text" id="emp-bonus" placeholder="0" style="margin-bottom:14px;">
             <label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="emp-active" checked style="width:auto;"> Faol</label>
             <label style="display:flex;align-items:center;gap:8px;margin-top:8px;"><input type="checkbox" id="emp-hidden" style="width:auto;"> Yashirilgan</label>
             ` : '<div class="hint-box">Fiksa/Bonus maydonlarini faqat admin tahrirlaydi.</div>'}
@@ -107,6 +107,11 @@
           </div>
         </div>
       </div>`;
+
+    if (isAdmin) {
+      attachMoneyMask(document.getElementById('emp-fiksa-amount'));
+      attachMoneyMask(document.getElementById('emp-bonus'));
+    }
 
     function resetForm() {
       document.getElementById('emp-form-title').textContent = 'Yangi xodim';
@@ -131,8 +136,8 @@
       document.getElementById('emp-position').value = emp.position_id || '';
       if (isAdmin) {
         document.getElementById('emp-fiksa-type').value = emp.fiksa_type;
-        document.getElementById('emp-fiksa-amount').value = emp.fiksa_amount;
-        document.getElementById('emp-bonus').value = emp.bonus_amount;
+        setMoneyValue(document.getElementById('emp-fiksa-amount'), emp.fiksa_amount);
+        setMoneyValue(document.getElementById('emp-bonus'), emp.bonus_amount);
         document.getElementById('emp-active').checked = emp.active;
         document.getElementById('emp-hidden').checked = emp.hidden;
       }
@@ -148,8 +153,8 @@
       };
       if (isAdmin) {
         body.fiksa_type = document.getElementById('emp-fiksa-type').value;
-        body.fiksa_amount = Number(document.getElementById('emp-fiksa-amount').value) || 0;
-        body.bonus_amount = Number(document.getElementById('emp-bonus').value) || 0;
+        body.fiksa_amount = moneyValue(document.getElementById('emp-fiksa-amount'));
+        body.bonus_amount = moneyValue(document.getElementById('emp-bonus'));
         body.active = document.getElementById('emp-active').checked;
         body.hidden = document.getElementById('emp-hidden').checked;
       }
@@ -173,17 +178,44 @@
           ${isAdmin ? `<div style="display:flex;gap:8px;margin-top:12px;"><input type="text" id="new-pos" placeholder="Yangi lavozim nomi"><button class="btn" id="add-pos">Qo'shish</button></div>` : ''}
         </div>
       </div>`;
-    document.getElementById('pos-list').innerHTML = pos.map((p) => `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 10px;border-radius:8px;background:var(--paper);">
+
+    function rowView(p) {
+      return `
         <span style="font-size:13px;">${p.name}</span>
-        ${isAdmin ? `<span class="btn-danger-text" data-del-pos="${p.id}" style="cursor:pointer;">O'chirish</span>` : ''}
-      </div>`).join('') || '<div class="empty">Lavozimlar yo\'q</div>';
-    if (isAdmin) {
+        ${isAdmin ? `<span><span class="btn-link" data-edit-pos="${p.id}">Tahrirlash</span> · <span class="btn-danger-text" data-del-pos="${p.id}" style="cursor:pointer;">O'chirish</span></span>` : ''}`;
+    }
+    function rowEdit(p) {
+      return `
+        <input type="text" class="pos-edit-name" value="${p.name}" style="flex:1;margin-right:8px;">
+        <span><span class="btn-link" data-save-pos="${p.id}">Saqlash</span> · <span class="btn-link" data-cancel-pos="${p.id}">Bekor</span></span>`;
+    }
+
+    function draw() {
+      document.getElementById('pos-list').innerHTML = pos.map((p) => `
+        <div id="pos-row-${p.id}" style="display:flex;align-items:center;justify-content:space-between;padding:9px 10px;border-radius:8px;background:var(--paper);">
+          ${rowView(p)}
+        </div>`).join('') || '<div class="empty">Lavozimlar yo\'q</div>';
+      if (!isAdmin) return;
       document.querySelectorAll('[data-del-pos]').forEach((el) => el.addEventListener('click', async () => {
         if (!confirm("O'chirilsinmi?")) return;
         try { await api(`/admin/positions/${el.dataset.delPos}`, { method: 'DELETE' }); renderPositions(); }
         catch (e) { alert(e.message); }
       }));
+      document.querySelectorAll('[data-edit-pos]').forEach((el) => el.addEventListener('click', () => {
+        const p = pos.find((x) => x.id === Number(el.dataset.editPos));
+        document.getElementById(`pos-row-${p.id}`).innerHTML = rowEdit(p);
+        document.querySelector(`[data-save-pos="${p.id}"]`).addEventListener('click', async () => {
+          const name = document.querySelector(`#pos-row-${p.id} .pos-edit-name`).value.trim();
+          if (!name) return;
+          try { await api(`/admin/positions/${p.id}`, { method: 'PUT', body: { name } }); renderPositions(); }
+          catch (e) { alert(e.message); }
+        });
+        document.querySelector(`[data-cancel-pos="${p.id}"]`).addEventListener('click', draw);
+      }));
+    }
+    draw();
+
+    if (isAdmin) {
       document.getElementById('add-pos').addEventListener('click', async () => {
         const input = document.getElementById('new-pos');
         if (!input.value.trim()) return;
@@ -197,14 +229,15 @@
   // ---------- Xarajat turlari ----------
   async function renderExpenseTypes() {
     const { expense_types } = await api('/admin/expense-types');
+    const bucketLabel = (b) => (b === 'avans' ? 'Avans' : b === 'ofitsant' ? 'Ofitsant' : b === 'texnichka' ? 'Texnichka' : '—');
+    const bucketOptions = (cur) => ['', 'avans', 'ofitsant', 'texnichka'].map((v) => `<option value="${v}" ${cur === v ? 'selected' : ''}>${v ? bucketLabel(v) : '—'}</option>`).join('');
+
     document.getElementById('tab-content').innerHTML = `
-      <div style="max-width:640px;">
+      <div style="max-width:680px;">
         <div class="card" style="padding:0;overflow:auto;margin-bottom:16px;">
-          <table>
+          <table id="et-table">
             <thead><tr><th>Nomi</th><th>Xodim talab qiladi</th><th>FOT ustuni</th><th></th></tr></thead>
-            <tbody>${expense_types.map((t) => `
-              <tr><td>${t.name}</td><td>${t.requires_employee ? 'Ha' : "Yo'q"}</td><td>${t.fot_bucket || '—'}</td>
-              <td><span class="btn-danger-text" data-del-et="${t.id}" style="cursor:pointer;">O'chirish</span></td></tr>`).join('')}</tbody>
+            <tbody></tbody>
           </table>
         </div>
         <div class="card">
@@ -213,15 +246,45 @@
           <input type="text" id="et-name" style="margin-bottom:12px;">
           <label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="et-requires-emp" style="width:auto;"> Xodim tanlash talab qilinadi</label>
           <label style="margin-top:12px;">FOT ustuni (ixtiyoriy)</label>
-          <select id="et-bucket" style="margin-bottom:14px;"><option value="">—</option><option value="avans">Avans</option><option value="ofitsant">Ofitsant</option><option value="texnichka">Texnichka</option></select>
+          <select id="et-bucket" style="margin-bottom:14px;">${bucketOptions('')}</select>
           <button class="btn-primary" id="et-save">Qo'shish</button>
         </div>
       </div>`;
-    document.querySelectorAll('[data-del-et]').forEach((el) => el.addEventListener('click', async () => {
-      if (!confirm("O'chirilsinmi?")) return;
-      await api(`/admin/expense-types/${el.dataset.delEt}`, { method: 'DELETE' });
-      renderExpenseTypes();
-    }));
+
+    function draw() {
+      document.querySelector('#et-table tbody').innerHTML = expense_types.map((t) => `
+        <tr id="et-row-${t.id}">
+          <td>${t.name}</td><td>${t.requires_employee ? 'Ha' : "Yo'q"}</td><td>${bucketLabel(t.fot_bucket)}</td>
+          <td><span class="btn-link" data-edit-et="${t.id}">Tahrirlash</span> · <span class="btn-danger-text" data-del-et="${t.id}" style="cursor:pointer;">O'chirish</span></td>
+        </tr>`).join('');
+      document.querySelectorAll('[data-del-et]').forEach((el) => el.addEventListener('click', async () => {
+        if (!confirm("O'chirilsinmi?")) return;
+        await api(`/admin/expense-types/${el.dataset.delEt}`, { method: 'DELETE' });
+        renderExpenseTypes();
+      }));
+      document.querySelectorAll('[data-edit-et]').forEach((el) => el.addEventListener('click', () => {
+        const t = expense_types.find((x) => x.id === Number(el.dataset.editEt));
+        document.getElementById(`et-row-${t.id}`).innerHTML = `
+          <td><input type="text" class="et-edit-name" value="${t.name}"></td>
+          <td><input type="checkbox" class="et-edit-req" ${t.requires_employee ? 'checked' : ''} style="width:auto;"></td>
+          <td><select class="et-edit-bucket">${bucketOptions(t.fot_bucket || '')}</select></td>
+          <td><span class="btn-link" data-save-et="${t.id}">Saqlash</span> · <span class="btn-link" data-cancel-et="${t.id}">Bekor</span></td>`;
+        document.querySelector(`[data-save-et="${t.id}"]`).addEventListener('click', async () => {
+          const row = document.getElementById(`et-row-${t.id}`);
+          const name = row.querySelector('.et-edit-name').value.trim();
+          if (!name) return;
+          try {
+            await api(`/admin/expense-types/${t.id}`, { method: 'PUT', body: {
+              name, requires_employee: row.querySelector('.et-edit-req').checked, fot_bucket: row.querySelector('.et-edit-bucket').value || null,
+            } });
+            renderExpenseTypes();
+          } catch (e) { alert(e.message); }
+        });
+        document.querySelector(`[data-cancel-et="${t.id}"]`).addEventListener('click', draw);
+      }));
+    }
+    draw();
+
     document.getElementById('et-save').addEventListener('click', async () => {
       const name = document.getElementById('et-name').value.trim();
       if (!name) return;
@@ -235,14 +298,14 @@
   // ---------- To'lov turlari ----------
   async function renderPaymentTypes() {
     const { payment_types } = await api('/admin/payment-types');
+    const groupOptions = (cur) => `<option value="card" ${cur !== 'inkassatsiya' ? 'selected' : ''}>Karta (Безналичные)</option><option value="inkassatsiya" ${cur === 'inkassatsiya' ? 'selected' : ''}>Инкассация</option>`;
+
     document.getElementById('tab-content').innerHTML = `
-      <div style="max-width:560px;">
+      <div style="max-width:600px;">
         <div class="card" style="padding:0;overflow:auto;margin-bottom:16px;">
-          <table>
-            <thead><tr><th>Nomi</th><th>Turi</th><th></th></tr></thead>
-            <tbody>${payment_types.map((p) => `
-              <tr><td>${p.name}</td><td>${p.group_type === 'certificate' ? 'Sertifikat' : 'Karta'}</td>
-              <td><span class="btn-danger-text" data-del-pt="${p.id}" style="cursor:pointer;">O'chirish</span></td></tr>`).join('')}</tbody>
+          <table id="pt-table">
+            <thead><tr><th>Nomi</th><th>Turi</th><th>Poster ID</th><th></th></tr></thead>
+            <tbody></tbody>
           </table>
         </div>
         <div class="card">
@@ -250,20 +313,57 @@
           <label>Nomi</label>
           <input type="text" id="pt-name" style="margin-bottom:12px;">
           <label>Turi</label>
-          <select id="pt-group" style="margin-bottom:14px;"><option value="card">Karta (Безналичные)</option><option value="certificate">Sertifikat (Yandex/Jiz-Biz)</option></select>
+          <select id="pt-group" style="margin-bottom:12px;">${groupOptions('card')}</select>
+          <label>Poster to'lov metodi ID (ixtiyoriy)</label>
+          <input type="text" id="pt-poster-id" placeholder="masalan: 2" style="margin-bottom:14px;">
           <button class="btn-primary" id="pt-save">Qo'shish</button>
         </div>
       </div>`;
-    document.querySelectorAll('[data-del-pt]').forEach((el) => el.addEventListener('click', async () => {
-      if (!confirm("O'chirilsinmi?")) return;
-      await api(`/admin/payment-types/${el.dataset.delPt}`, { method: 'DELETE' });
-      renderPaymentTypes();
-    }));
+
+    function draw() {
+      document.querySelector('#pt-table tbody').innerHTML = payment_types.map((p) => `
+        <tr id="pt-row-${p.id}">
+          <td>${p.name}</td><td>${p.group_type === 'inkassatsiya' ? 'Инкассация' : 'Karta'}</td>
+          <td>${p.poster_payment_method_id || '<span style="color:var(--muted);">—</span>'}</td>
+          <td><span class="btn-link" data-edit-pt="${p.id}">Tahrirlash</span> · <span class="btn-danger-text" data-del-pt="${p.id}" style="cursor:pointer;">O'chirish</span></td>
+        </tr>`).join('');
+      document.querySelectorAll('[data-del-pt]').forEach((el) => el.addEventListener('click', async () => {
+        if (!confirm("O'chirilsinmi?")) return;
+        await api(`/admin/payment-types/${el.dataset.delPt}`, { method: 'DELETE' });
+        renderPaymentTypes();
+      }));
+      document.querySelectorAll('[data-edit-pt]').forEach((el) => el.addEventListener('click', () => {
+        const p = payment_types.find((x) => x.id === Number(el.dataset.editPt));
+        document.getElementById(`pt-row-${p.id}`).innerHTML = `
+          <td><input type="text" class="pt-edit-name" value="${p.name}"></td>
+          <td><select class="pt-edit-group">${groupOptions(p.group_type)}</select></td>
+          <td><input type="text" class="pt-edit-poster" value="${p.poster_payment_method_id || ''}" style="width:70px;"></td>
+          <td><span class="btn-link" data-save-pt="${p.id}">Saqlash</span> · <span class="btn-link" data-cancel-pt="${p.id}">Bekor</span></td>`;
+        document.querySelector(`[data-save-pt="${p.id}"]`).addEventListener('click', async () => {
+          const row = document.getElementById(`pt-row-${p.id}`);
+          const name = row.querySelector('.pt-edit-name').value.trim();
+          if (!name) return;
+          try {
+            await api(`/admin/payment-types/${p.id}`, { method: 'PUT', body: {
+              name, group_type: row.querySelector('.pt-edit-group').value,
+              poster_payment_method_id: row.querySelector('.pt-edit-poster').value.trim() || null,
+            } });
+            renderPaymentTypes();
+          } catch (e) { alert(e.message); }
+        });
+        document.querySelector(`[data-cancel-pt="${p.id}"]`).addEventListener('click', draw);
+      }));
+    }
+    draw();
+
     document.getElementById('pt-save').addEventListener('click', async () => {
       const name = document.getElementById('pt-name').value.trim();
       if (!name) return;
       try {
-        await api('/admin/payment-types', { method: 'POST', body: { name, group_type: document.getElementById('pt-group').value } });
+        await api('/admin/payment-types', { method: 'POST', body: {
+          name, group_type: document.getElementById('pt-group').value,
+          poster_payment_method_id: document.getElementById('pt-poster-id').value.trim() || null,
+        } });
         renderPaymentTypes();
       } catch (e) { alert(e.message); }
     });
@@ -272,30 +372,64 @@
   // ---------- Bozorlik ingredientlari ----------
   async function renderIngredients() {
     const { ingredients } = await api('/admin/ingredients');
+    const unitOptions = (cur) => ['kg', 'dona', 'litr', 'dasta'].map((u) => `<option value="${u}" ${cur === u ? 'selected' : ''}>${u}</option>`).join('');
+
     document.getElementById('tab-content').innerHTML = `
-      <div style="max-width:640px;">
+      <div style="max-width:680px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:13px;color:var(--muted);">Поставщик "Закупка" ostidagi ingredientlar Poster'dan olinadi</div>
+          <button id="ing-sync" style="font-size:13px;">Poster'dan sinxronlash</button>
+        </div>
+        <div id="ing-sync-msg" style="display:none;margin-bottom:12px;"></div>
         <div class="card" style="padding:0;overflow:auto;margin-bottom:16px;">
-          <table>
-            <thead><tr><th>Nomi</th><th>Birlik</th><th></th></tr></thead>
-            <tbody>${ingredients.map((i) => `
-              <tr><td>${i.name}</td><td>${i.unit}</td>
-              <td><span class="btn-danger-text" data-del-ing="${i.id}" style="cursor:pointer;">O'chirish</span></td></tr>`).join('') || '<tr><td class="empty" colspan="3">Ingredientlar yo\'q</td></tr>'}</tbody>
+          <table id="ing-table">
+            <thead><tr><th>Nomi</th><th>Birlik</th><th>Manba</th><th></th></tr></thead>
+            <tbody></tbody>
           </table>
         </div>
         <div class="card">
-          <div style="font-size:13px;font-weight:700;margin-bottom:12px;">Yangi ingredient</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px;">Yangi ingredient (qo'lda)</div>
           <div style="display:flex;gap:8px;">
             <input type="text" id="ing-name" placeholder="Nomi (masalan: Pomidor)">
-            <select id="ing-unit" style="max-width:110px;"><option value="kg">kg</option><option value="dona">dona</option><option value="litr">litr</option><option value="dasta">dasta</option></select>
+            <select id="ing-unit" style="max-width:110px;">${unitOptions('kg')}</select>
             <button class="btn" id="ing-save">Qo'shish</button>
           </div>
         </div>
       </div>`;
-    document.querySelectorAll('[data-del-ing]').forEach((el) => el.addEventListener('click', async () => {
-      if (!confirm("O'chirilsinmi?")) return;
-      await api(`/admin/ingredients/${el.dataset.delIng}`, { method: 'DELETE' });
-      renderIngredients();
-    }));
+
+    function draw() {
+      document.querySelector('#ing-table tbody').innerHTML = ingredients.map((i) => `
+        <tr id="ing-row-${i.id}">
+          <td>${i.name}</td><td>${i.unit}</td>
+          <td>${i.synced_from_poster ? '<span class="pill pill-green">Poster</span>' : '<span class="pill pill-gray">Qo\'lda</span>'}</td>
+          <td><span class="btn-link" data-edit-ing="${i.id}">Tahrirlash</span> · <span class="btn-danger-text" data-del-ing="${i.id}" style="cursor:pointer;">O'chirish</span></td>
+        </tr>`).join('') || '<tr><td class="empty" colspan="4">Ingredientlar yo\'q</td></tr>';
+      document.querySelectorAll('[data-del-ing]').forEach((el) => el.addEventListener('click', async () => {
+        if (!confirm("O'chirilsinmi?")) return;
+        await api(`/admin/ingredients/${el.dataset.delIng}`, { method: 'DELETE' });
+        renderIngredients();
+      }));
+      document.querySelectorAll('[data-edit-ing]').forEach((el) => el.addEventListener('click', () => {
+        const i = ingredients.find((x) => x.id === Number(el.dataset.editIng));
+        document.getElementById(`ing-row-${i.id}`).innerHTML = `
+          <td><input type="text" class="ing-edit-name" value="${i.name}"></td>
+          <td><select class="ing-edit-unit">${unitOptions(i.unit)}</select></td>
+          <td>${i.synced_from_poster ? '<span class="pill pill-green">Poster</span>' : '<span class="pill pill-gray">Qo\'lda</span>'}</td>
+          <td><span class="btn-link" data-save-ing="${i.id}">Saqlash</span> · <span class="btn-link" data-cancel-ing="${i.id}">Bekor</span></td>`;
+        document.querySelector(`[data-save-ing="${i.id}"]`).addEventListener('click', async () => {
+          const row = document.getElementById(`ing-row-${i.id}`);
+          const name = row.querySelector('.ing-edit-name').value.trim();
+          if (!name) return;
+          try {
+            await api(`/admin/ingredients/${i.id}`, { method: 'PUT', body: { name, unit: row.querySelector('.ing-edit-unit').value } });
+            renderIngredients();
+          } catch (e) { alert(e.message); }
+        });
+        document.querySelector(`[data-cancel-ing="${i.id}"]`).addEventListener('click', draw);
+      }));
+    }
+    draw();
+
     document.getElementById('ing-save').addEventListener('click', async () => {
       const name = document.getElementById('ing-name').value.trim();
       if (!name) return;
@@ -303,6 +437,23 @@
         await api('/admin/ingredients', { method: 'POST', body: { name, unit: document.getElementById('ing-unit').value } });
         renderIngredients();
       } catch (e) { alert(e.message); }
+    });
+
+    document.getElementById('ing-sync').addEventListener('click', async () => {
+      const msg = document.getElementById('ing-sync-msg');
+      msg.style.display = 'block';
+      msg.className = 'hint-box';
+      msg.textContent = 'Poster bilan sinxronlanmoqda...';
+      try {
+        const r = await api('/admin/ingredients/sync', { method: 'POST' });
+        let text = `Tayyor: ${r.created} ta yangi, ${r.updated} ta yangilandi (jami ${r.total}).`;
+        if (r.skipped && r.skipped.length) text += ` Bir xil nomdagi mahalliy ingredientlar sababli o'tkazib yuborildi: ${r.skipped.join(', ')}.`;
+        msg.textContent = text;
+        renderIngredients();
+      } catch (e) {
+        msg.className = 'error-box';
+        msg.textContent = e.message;
+      }
     });
   }
 
@@ -312,10 +463,9 @@
     document.getElementById('tab-content').innerHTML = `
       <div style="max-width:640px;">
         <div class="card" style="padding:0;overflow:auto;margin-bottom:16px;">
-          <table>
+          <table id="cat-table">
             <thead><tr><th>Nomi</th><th></th></tr></thead>
-            <tbody>${categories.map((c) => `
-              <tr><td>${c.name}</td><td><span class="btn-danger-text" data-del-cat="${c.id}" style="cursor:pointer;">O'chirish</span></td></tr>`).join('')}</tbody>
+            <tbody></tbody>
           </table>
         </div>
         <div class="card">
@@ -325,11 +475,34 @@
           </div>
         </div>
       </div>`;
-    document.querySelectorAll('[data-del-cat]').forEach((el) => el.addEventListener('click', async () => {
-      if (!confirm("O'chirilsinmi?")) return;
-      await api(`/admin/categories/${el.dataset.delCat}`, { method: 'DELETE' });
-      renderCategories();
-    }));
+
+    function draw() {
+      document.querySelector('#cat-table tbody').innerHTML = categories.map((c) => `
+        <tr id="cat-row-${c.id}">
+          <td>${c.name}</td>
+          <td><span class="btn-link" data-edit-cat="${c.id}">Tahrirlash</span> · <span class="btn-danger-text" data-del-cat="${c.id}" style="cursor:pointer;">O'chirish</span></td>
+        </tr>`).join('');
+      document.querySelectorAll('[data-del-cat]').forEach((el) => el.addEventListener('click', async () => {
+        if (!confirm("O'chirilsinmi?")) return;
+        await api(`/admin/categories/${el.dataset.delCat}`, { method: 'DELETE' });
+        renderCategories();
+      }));
+      document.querySelectorAll('[data-edit-cat]').forEach((el) => el.addEventListener('click', () => {
+        const c = categories.find((x) => x.id === Number(el.dataset.editCat));
+        document.getElementById(`cat-row-${c.id}`).innerHTML = `
+          <td><input type="text" class="cat-edit-name" value="${c.name}"></td>
+          <td><span class="btn-link" data-save-cat="${c.id}">Saqlash</span> · <span class="btn-link" data-cancel-cat="${c.id}">Bekor</span></td>`;
+        document.querySelector(`[data-save-cat="${c.id}"]`).addEventListener('click', async () => {
+          const name = document.querySelector(`#cat-row-${c.id} .cat-edit-name`).value.trim();
+          if (!name) return;
+          await api(`/admin/categories/${c.id}`, { method: 'PUT', body: { name } });
+          renderCategories();
+        });
+        document.querySelector(`[data-cancel-cat="${c.id}"]`).addEventListener('click', draw);
+      }));
+    }
+    draw();
+
     document.getElementById('cat-save').addEventListener('click', async () => {
       const name = document.getElementById('cat-name').value.trim();
       if (!name) return;

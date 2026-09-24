@@ -1,4 +1,5 @@
 const express = require('express');
+const XLSX = require('xlsx');
 const { pool } = require('../db');
 const { requireSection, requireRole } = require('../middleware/auth');
 const { businessDateFor } = require('../lib/businessDay');
@@ -6,8 +7,11 @@ const { syncBusinessDate } = require('../jobs/salesSync');
 
 const router = express.Router();
 
-router.get('/', requireSection('daily_sales'), async (req, res) => {
-  const days = Math.min(Math.max(parseInt(req.query.days, 10) || 7, 1), 31);
+async function buildTable(req) {
+  const to = req.query.to || businessDateFor();
+  const from = req.query.from || (req.query.days
+    ? null // days berilgan bo'lsa quyida hisoblanadi
+    : to);
   const categoryIds = (req.query.category_ids || '').split(',').filter(Boolean).map(Number);
 
   const { rows: allCategories } = await pool.query('SELECT * FROM sales_categories WHERE active = true ORDER BY sort_order');
@@ -15,13 +19,16 @@ router.get('/', requireSection('daily_sales'), async (req, res) => {
     ? allCategories.filter((c) => categoryIds.includes(c.id))
     : allCategories.slice(0, 5);
 
-  const today = businessDateFor();
+  const days = Math.min(Math.max(parseInt(req.query.days, 10) || 7, 1), 366);
+  const fromDate = from || null;
+
   const { rows } = await pool.query(
-    `SELECT business_date::text AS business_date, category_id, quantity, amount
-     FROM daily_sales_cache
-     WHERE business_date <= $1 AND business_date > ($1::date - $2::int)
-     ORDER BY business_date DESC`,
-    [today, days]
+    fromDate
+      ? `SELECT business_date::text AS business_date, category_id, quantity, amount
+         FROM daily_sales_cache WHERE business_date BETWEEN $1 AND $2 ORDER BY business_date DESC`
+      : `SELECT business_date::text AS business_date, category_id, quantity, amount
+         FROM daily_sales_cache WHERE business_date <= $1 AND business_date > ($1::date - $2::int) ORDER BY business_date DESC`,
+    fromDate ? [fromDate, to] : [to, days]
   );
 
   const byDate = new Map();
@@ -44,7 +51,28 @@ router.get('/', requireSection('daily_sales'), async (req, res) => {
     return row;
   });
 
+  return { allCategories, selectedCategories, table };
+}
+
+router.get('/', requireSection('daily_sales'), async (req, res) => {
+  const { allCategories, selectedCategories, table } = await buildTable(req);
   res.json({ categories: allCategories, selected_categories: selectedCategories, table });
+});
+
+router.get('/export/xlsx', requireSection('daily_sales'), async (req, res) => {
+  const { selectedCategories, table } = await buildTable(req);
+  const header = ['Sana', ...selectedCategories.map((c) => c.name), 'Jami (dona)'];
+  const aoa = [header];
+  for (const row of table) {
+    aoa.push([row.business_date, ...selectedCategories.map((c) => row[c.id] || 0), row.total_quantity]);
+  }
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Kunlik savdo');
+  const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', 'attachment; filename="Kunlik_savdo.xlsx"');
+  res.send(buf);
 });
 
 // Admin/curator — qo'lda sinxronlashni majburlash (masalan yangi mahsulot bog'langandan keyin).

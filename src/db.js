@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS ingredients (
 CREATE TABLE IF NOT EXISTS bozorlik_entries (
   id SERIAL PRIMARY KEY,
   business_date DATE NOT NULL,
-  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','posted')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','posted','rejected')),
   total_amount NUMERIC NOT NULL DEFAULT 0,
   comment TEXT,
   created_by INT REFERENCES users(id),
@@ -79,6 +79,7 @@ CREATE TABLE IF NOT EXISTS bozorlik_entries (
   poster_supply_id TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE INDEX IF NOT EXISTS idx_bozorlik_date ON bozorlik_entries(business_date);
 
 CREATE TABLE IF NOT EXISTS bozorlik_items (
   id SERIAL PRIMARY KEY,
@@ -116,7 +117,7 @@ CREATE TABLE IF NOT EXISTS payment_types (
   id SERIAL PRIMARY KEY,
   name TEXT UNIQUE NOT NULL,
   poster_payment_method_id TEXT,
-  group_type TEXT NOT NULL DEFAULT 'card' CHECK (group_type IN ('card','certificate')),
+  group_type TEXT NOT NULL DEFAULT 'card' CHECK (group_type IN ('card','inkassatsiya')),
   sort_order INT NOT NULL DEFAULT 0,
   active BOOLEAN NOT NULL DEFAULT true
 );
@@ -181,6 +182,7 @@ const DEFAULT_EXPENSE_TYPES = [
 const DEFAULT_PAYMENT_TYPES = [
   { name: 'UZCARD', group_type: 'card' },
   { name: 'HUMO', group_type: 'card' },
+  { name: 'Инкассация', group_type: 'inkassatsiya' },
   { name: 'Uz Qr Kod', group_type: 'card' },
   { name: 'Click', group_type: 'card' },
   { name: 'Payme', group_type: 'card' },
@@ -245,11 +247,42 @@ async function ensureSeed(client) {
   }
 }
 
+// Productionda (Neon) ma'lumotlar bazasi allaqachon mavjud bo'lishi mumkin —
+// shuning uchun bu qo'shimcha o'zgarishlar ALTER TABLE ... IF NOT EXISTS
+// shaklida, hech narsani o'chirmasdan qo'shiladi.
+const MIGRATIONS_SQL = `
+ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS synced_from_poster BOOLEAN NOT NULL DEFAULT false;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ingredients_poster_id ON ingredients(poster_ingredient_id) WHERE poster_ingredient_id IS NOT NULL;
+
+DO $$
+BEGIN
+  ALTER TABLE bozorlik_entries DROP CONSTRAINT IF EXISTS bozorlik_entries_status_check;
+  ALTER TABLE bozorlik_entries ADD CONSTRAINT bozorlik_entries_status_check
+    CHECK (status IN ('pending','approved','posted','rejected'));
+EXCEPTION WHEN others THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+  ALTER TABLE payment_types DROP CONSTRAINT IF EXISTS payment_types_group_type_check;
+  ALTER TABLE payment_types ADD CONSTRAINT payment_types_group_type_check
+    CHECK (group_type IN ('card','inkassatsiya'));
+EXCEPTION WHEN others THEN NULL;
+END $$;
+
+UPDATE payment_types SET group_type = 'inkassatsiya' WHERE name = 'Инкассация' AND group_type <> 'inkassatsiya';
+
+INSERT INTO payment_types(name, group_type, sort_order)
+SELECT 'Инкассация', 'inkassatsiya', 2
+WHERE NOT EXISTS (SELECT 1 FROM payment_types WHERE name = 'Инкассация');
+`;
+
 async function initDb() {
   const client = await pool.connect();
   try {
     await client.query(SCHEMA_SQL);
     await ensureSeed(client);
+    await client.query(MIGRATIONS_SQL);
   } finally {
     client.release();
   }

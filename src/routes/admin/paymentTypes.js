@@ -17,7 +17,7 @@ router.post('/', requireRole('admin'), async (req, res) => {
     const { rows } = await pool.query(
       `INSERT INTO payment_types(name, group_type, poster_payment_method_id, sort_order)
        VALUES ($1,$2,$3,$4) RETURNING *`,
-      [name.trim(), group_type === 'certificate' ? 'certificate' : 'card', poster_payment_method_id || null, maxRows[0].next]
+      [name.trim(), group_type === 'inkassatsiya' ? 'inkassatsiya' : 'card', poster_payment_method_id || null, maxRows[0].next]
     );
     res.status(201).json({ payment_type: rows[0] });
   } catch (e) {

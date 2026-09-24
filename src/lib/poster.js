@@ -49,15 +49,17 @@ async function posterCall(method, params = {}) {
 // ---- Mock ma'lumotlar (faqat mahalliy sinov uchun) -------------------------
 const mock = {
   async dashGetTransactions({ dateFrom, dateTo }) {
-    // Summalar TIYIN'da (100 = 1 so'm)
+    // Summalar TIYIN'da (100 = 1 so'm). payment_method_id: '0'=naqd (mock shartlashuv),
+    // '1'/'2'=kartalar, client_id '2'/'3' bo'lsa — sertifikat (Jiz-Biz/Yandex eats).
     return [
-      { transaction_id: '9001', date_close: Date.now() - 3600000, payment_method_id: '1', sum: 6400000, client_id: '0' },
-      { transaction_id: '9002', date_close: Date.now() - 7200000, payment_method_id: '2', sum: 4100000, client_id: '0' },
+      { transaction_id: '9001', date_close: Date.now() - 3600000, payment_method_id: '0', sum: 208800000, client_id: '0' },
+      { transaction_id: '9002', date_close: Date.now() - 7200000, payment_method_id: '1', sum: 42400000, client_id: '0' },
+      { transaction_id: '9003', date_close: Date.now() - 5400000, payment_method_id: '2', sum: 21900000, client_id: '0' },
     ];
   },
   async financeGetCashShifts() {
     return [
-      { cash_shift_id: '501', date_start: '2026-09-23 09:02:00', date_end: '0000-00-00 00:00:00', amount_start: 300000, amount_end: 0 },
+      { cash_shift_id: '501', date_start: '2026-09-23 09:02:00', date_end: '2026-09-24 04:50:00', amount_start: 200000, amount_end: 94000 },
     ];
   },
   async clientsGetClients() {
@@ -81,6 +83,14 @@ const mock = {
   },
   async spotsGetSpots() {
     return [{ spot_id: '1', name: "Farg'ona" }];
+  },
+  async storageGetIngredients() {
+    // "Поставщик = Закупка" ostida kiritilgan tovarlarga o'xshash mock ro'yxat.
+    return [
+      { ingredient_id: '301', ingredient_name: 'Pomidor', ingredient_unit: 'kg' },
+      { ingredient_id: '302', ingredient_name: 'Bodring', ingredient_unit: 'kg' },
+      { ingredient_id: '303', ingredient_name: "Ko'katlar", ingredient_unit: 'dasta' },
+    ];
   },
   async createSupply(payload) {
     return { supply_id: `mock-${Date.now()}` };
@@ -130,6 +140,20 @@ const poster = {
   /** spots.getSpots — filiallar ro'yxati. */
   async spotsGetSpots() {
     return cfg.poster.mock ? mock.spotsGetSpots() : posterCall('spots.getSpots');
+  },
+
+  /**
+   * storage.getIngredients — Poster'dagi barcha ombor ingredientlari.
+   * DIQQAT: bu metod KPI Mondo loyihasida ilgari sinovdan o'tkazilmagan —
+   * boshqa oltita metoddan farqli o'laroq, bu YANGI. Haqiqiy Poster hisobida
+   * ishlashini birinchi marta productionda (Render deploy'dan keyin)
+   * tekshiring. Agar Poster boshqa nom/parametr kutsa (masalan
+   * `storage.getIngredient` yoki filial/ombor ID talab qilsa), shu funksiya
+   * ichida moslashtirish kerak bo'ladi.
+   */
+  async storageGetIngredients() {
+    const raw = cfg.poster.mock ? await mock.storageGetIngredients() : await posterCall('storage.getIngredients');
+    return dedupeById(raw, 'ingredient_id');
   },
 
   /**

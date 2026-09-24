@@ -1,12 +1,39 @@
 const express = require('express');
 const { pool } = require('../../db');
 const { requireAdminOrCurator, requireAuth } = require('../../middleware/auth');
+const poster = require('../../lib/poster');
 
 const router = express.Router();
 
 router.get('/', requireAuth, async (req, res) => {
   const { rows } = await pool.query('SELECT * FROM ingredients WHERE active = true ORDER BY name');
   res.json({ ingredients: rows });
+});
+
+// Poster'dagi "Поставщик = Закупка" ostida kiritilgan ingredientlarni olib,
+// mahalliy ro'yxatga (poster_ingredient_id bo'yicha) sinxronlaydi.
+router.post('/sync', requireAdminOrCurator('ingredients:write'), async (req, res) => {
+  const items = await poster.storageGetIngredients();
+  let created = 0;
+  let updated = 0;
+  const skipped = [];
+  for (const it of items) {
+    try {
+      const { rows } = await pool.query(
+        `INSERT INTO ingredients(name, unit, poster_ingredient_id, synced_from_poster)
+         VALUES ($1,$2,$3,true)
+         ON CONFLICT (poster_ingredient_id) WHERE poster_ingredient_id IS NOT NULL DO UPDATE SET
+           name = EXCLUDED.name, unit = EXCLUDED.unit, active = true, synced_from_poster = true
+         RETURNING (xmax = 0) AS inserted`,
+        [it.ingredient_name, it.ingredient_unit || 'kg', it.ingredient_id]
+      );
+      if (rows[0].inserted) created += 1; else updated += 1;
+    } catch (e) {
+      if (e.code === '23505') skipped.push(it.ingredient_name); // xuddi shu nomda mahalliy ingredient bor
+      else throw e;
+    }
+  }
+  res.json({ ok: true, created, updated, skipped, total: items.length });
 });
 
 router.post('/', requireAdminOrCurator('ingredients:write'), async (req, res) => {

@@ -43,6 +43,18 @@ tokenlar bilan birinchi jonli sinov Render'ga joylashtirilgandan keyin**
 bo'ladi. Productionda `.env`'da `POSTER_MOCK=false` qiling (yoki umuman olib
 tashlang).
 
+**Poster bilan solishtirish (`src/lib/posterCompare.js`) haqida qo'shimcha eslatma:**
+quyidagi taxminlar hali haqiqiy Poster hisobida tekshirilmagan:
+- Naqd to'lovlar `dash.getTransactions`da `payment_method_id === '0'` deb qabul qilinadi.
+- Sertifikat mijozlari: `client_id '3'` = Yandex eats, `client_id '2'` = Jiz-Biz restaurant.
+- Karta turlari `payment_types.poster_payment_method_id` orqali moslashtiriladi — buni
+  admin panelda **To'lov turlari** bo'limida har bir turga Poster'dagi haqiqiy
+  `payment_method_id`'ni kiritib qo'yish kerak (aks holda "Карточки (aniqlanmagan)"
+  sifatida yig'iladi — bu tuzatiladigan, funksiyaga xalaqit bermaydigan holat).
+
+Birinchi solishtirishdan keyin bu qiymatlar Poster'dagi haqiqiy ID'lar bilan
+mos kelmasa, xabar bering — moslashtirib beraman.
+
 ## Render + Neon'ga joylashtirish
 
 1. **GitHub**: `src/` va `public/` papkalarini **alohida-alohida** "Add file →
@@ -104,3 +116,4 @@ Bozorlikni bitta-bitta qayta hisoblash (`POST /api/cash/:date/recompute`)
 ATAYLAB faqat bitta yozuv uchun ishlaydi — butun davr uchun ommaviy qayta
 hisoblash funksiyasi Poster'ga ketma-ket ko'p so'rov yuborib, sekinlashtirish
 va rate-limit xavfini keltirib chiqarishi mumkinligi sababli qo'shilmagan.
+

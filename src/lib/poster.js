@@ -29,13 +29,27 @@ function dedupeById(items, idField) {
   return Array.from(map.values());
 }
 
-async function posterCall(method, params = {}) {
+async function posterCall(method, params = {}, httpMethod = 'GET') {
   const url = new URL(`${cfg.poster.baseUrl}/api/${method}`);
   url.searchParams.set('token', cfg.poster.token);
-  for (const [k, v] of Object.entries(params)) {
-    if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
+
+  let res;
+  if (httpMethod === 'POST') {
+    // Yozish/yaratish amallari (masalan storage.createSupply) — Poster bunday
+    // metodlarni GET bilan qabul qilmaydi (HTTP 405 qaytaradi), token GET
+    // so'rovlaridagidek query'da qoladi, ma'lumot esa JSON body'da yuboriladi.
+    res = await fetch(url.toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+  } else {
+    for (const [k, v] of Object.entries(params)) {
+      if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
+    }
+    res = await fetch(url.toString(), { method: 'GET' });
   }
-  const res = await fetch(url.toString(), { method: 'GET' });
+
   if (!res.ok) {
     throw new Error(`Poster API xatosi: ${method} -> HTTP ${res.status}`);
   }
@@ -160,12 +174,18 @@ const poster = {
 
   /**
    * Bozorlikni Poster'ga "Закупка" (Postavshik=Bozor) formatida supply
-   * sifatida yuboradi. Haqiqiy Poster supply create endpointi joylashtirish
-   * paytida Poster hisobidagi supplier_id/storage_id bilan aniqlanadi;
-   * hozircha interfeys sifatida ishlatiladi.
+   * sifatida yuboradi.
+   * TUZATILDI: avval bu chaqiruv (boshqa barcha "get*" metodlar kabi) GET
+   * so'rov sifatida yuborilar edi va Poster HTTP 405 qaytargan — chunki
+   * yozish/yaratish amallari (create) Poster'da odatda POST talab qiladi.
+   * Endi POST bilan, ma'lumot JSON body sifatida yuboriladi.
+   * DIQQAT: metod nomi va payload tuzilishi (`storage_id`, `supplier_id`
+   * kabi maydonlar Poster hisobingizga xos bo'lishi mumkin) hali haqiqiy
+   * hisobda to'liq tasdiqlanmagan — agar yana xato chiqsa (masalan
+   * "parametr yetishmayapti"), xato matnini yuboring, moslashtiraman.
    */
   async createSupply(payload) {
-    return cfg.poster.mock ? mock.createSupply(payload) : posterCall('storage.createSupply', payload);
+    return cfg.poster.mock ? mock.createSupply(payload) : posterCall('storage.createSupply', payload, 'POST');
   },
 };
 

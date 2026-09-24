@@ -185,6 +185,13 @@ router.post('/:id/reject', requireAdminOrCurator('bozorlik:approve_post'), async
   res.json({ entry: rows[0] });
 });
 
+// O'chirish — admin va curator, holatidan qat'iy nazar (bozorlik_items ON DELETE CASCADE bilan birga o'chadi).
+router.delete('/:id', requireAdminOrCurator('bozorlik:approve_post'), async (req, res) => {
+  const { rows } = await pool.query('DELETE FROM bozorlik_entries WHERE id = $1 RETURNING *', [req.params.id]);
+  if (!rows[0]) return res.status(404).json({ error: 'Topilmadi' });
+  res.json({ ok: true, was_posted: rows[0].status === 'posted' });
+});
+
 // "Posterga kiritish" — avtomatik ravishda Poster'ga Закупка (Bozor) supply sifatida yuboradi.
 router.post('/:id/post-to-poster', requireAdminOrCurator('bozorlik:approve_post'), async (req, res) => {
   const { rows: entryRows } = await pool.query('SELECT * FROM bozorlik_entries WHERE id = $1', [req.params.id]);

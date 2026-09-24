@@ -107,9 +107,19 @@ const mock = {
     ];
   },
   async createSupply(payload) {
+    // Sinov uchun — haqiqiy Poster javobi supply_id qaytaradi.
     return { supply_id: `mock-${Date.now()}` };
   },
 };
+
+// Ish kuni sanasiga joriy vaqtni qo'shib, Poster kutgan "Y-m-d H:i:s" formatiga o'giradi.
+function formatPosterSupplyDate(businessDate) {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  const ss = String(now.getSeconds()).padStart(2, '0');
+  return `${businessDate} ${hh}:${mm}:${ss}`;
+}
 
 const poster = {
   /** dash.getTransactions — to'lov turi tafsiloti, mijoz ID. Summalar TIYIN'da. */
@@ -173,19 +183,35 @@ const poster = {
   },
 
   /**
-   * Bozorlikni Poster'ga "Закупка" (Postavshik=Bozor) formatida supply
-   * sifatida yuboradi.
-   * TUZATILDI: avval bu chaqiruv (boshqa barcha "get*" metodlar kabi) GET
-   * so'rov sifatida yuborilar edi va Poster HTTP 405 qaytargan — chunki
-   * yozish/yaratish amallari (create) Poster'da odatda POST talab qiladi.
-   * Endi POST bilan, ma'lumot JSON body sifatida yuboriladi.
-   * DIQQAT: metod nomi va payload tuzilishi (`storage_id`, `supplier_id`
-   * kabi maydonlar Poster hisobingizga xos bo'lishi mumkin) hali haqiqiy
-   * hisobda to'liq tasdiqlanmagan — agar yana xato chiqsa (masalan
-   * "parametr yetishmayapti"), xato matnini yuboring, moslashtiraman.
+   * Bozorlikni Poster'ga "Закупка" (Postavshik=Bozor, storage_id/supplier_id=1)
+   * formatida supply sifatida yuboradi.
+   *
+   * TUZATILDI (2 marta):
+   * 1) Avval GET so'rov yuborilar edi (HTTP 405) — endi POST.
+   * 2) Payload tuzilishi Poster'ning haqiqiy so'rov formatiga moslashtirildi
+   *    (haqiqiy ishlaydigan misol asosida tasdiqlangan: {supply:{...},
+   *    ingredient:[...]}), supplier_id/storage_id esa Network panelidan
+   *    tasdiqlangan qiymatlar (ikkalasi ham "1").
+   *
+   * items: [{ posterIngredientId, quantity, sum }] — sum shu qatorning
+   * JAMI summasi (miqdor x narx), birlik narxi emas — Poster shunday kutadi.
    */
-  async createSupply(payload) {
-    return cfg.poster.mock ? mock.createSupply(payload) : posterCall('storage.createSupply', payload, 'POST');
+  async createSupply({ businessDate, items }) {
+    const body = {
+      supply: {
+        date: formatPosterSupplyDate(businessDate),
+        supplier_id: cfg.poster.supplierId,
+        storage_id: cfg.poster.storageId,
+        packing: '1',
+      },
+      ingredient: items.map((it) => ({
+        id: String(it.posterIngredientId),
+        type: '1',
+        num: String(it.quantity),
+        sum: String(it.sum),
+      })),
+    };
+    return cfg.poster.mock ? mock.createSupply(body) : posterCall('storage.createSupply', body, 'POST');
   },
 };
 

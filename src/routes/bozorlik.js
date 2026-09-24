@@ -213,12 +213,16 @@ router.post('/:id/post-to-poster', requireAdminOrCurator('bozorlik:approve_post'
     });
   }
 
+  const businessDateStr = entry.business_date instanceof Date
+    ? entry.business_date.toISOString().slice(0, 10)
+    : String(entry.business_date).slice(0, 10);
+
   const result = await poster.createSupply({
-    business_date: entry.business_date,
-    ingredients: itemRows.map((it) => ({
-      poster_ingredient_id: it.poster_ingredient_id,
+    businessDate: businessDateStr,
+    items: itemRows.map((it) => ({
+      posterIngredientId: it.poster_ingredient_id,
       quantity: Number(it.quantity),
-      unit_price: Number(it.unit_price),
+      sum: Number(it.sum),
     })),
   });
 

@@ -34,6 +34,11 @@ const config = {
     // mahalliy sinovlarda mock javoblar ishlatiladi. Productionda
     // POSTER_MOCK=false qilib qo'ying (yoki umuman o'rnatmang).
     mock: (process.env.POSTER_MOCK || 'true').toLowerCase() !== 'false',
+    // Bozorlik ("Закупка") supply yaratishda ishlatiladigan doimiy
+    // Поставщик va Склад ID'lari — Poster hisobida Network tab orqali
+    // tasdiqlangan (supplier_id=1 "Закупка", storage_id=1 "Склад 1").
+    supplierId: process.env.POSTER_SUPPLIER_ID || '1',
+    storageId: process.env.POSTER_STORAGE_ID || '1',
   },
 
   branch: {

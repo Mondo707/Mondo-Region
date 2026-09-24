@@ -143,16 +143,18 @@ const poster = {
   },
 
   /**
-   * storage.getIngredients — Poster'dagi barcha ombor ingredientlari.
-   * DIQQAT: bu metod KPI Mondo loyihasida ilgari sinovdan o'tkazilmagan —
-   * boshqa oltita metoddan farqli o'laroq, bu YANGI. Haqiqiy Poster hisobida
-   * ishlashini birinchi marta productionda (Render deploy'dan keyin)
-   * tekshiring. Agar Poster boshqa nom/parametr kutsa (masalan
-   * `storage.getIngredient` yoki filial/ombor ID talab qilsa), shu funksiya
-   * ichida moslashtirish kerak bo'ladi.
+   * menu.getIngredients — Poster'dagi barcha ombor ingredientlari ro'yxati.
+   * TUZATILDI: avval noto'g'ri `storage.getIngredients` ishlatilgan edi va bu
+   * haqiqiy Poster hisobida HTTP 405 (Method Not Allowed) xato qaytargan —
+   * chunki bunday metod umuman yo'q. Rasmiy hujjatga ko'ra to'g'ri metod
+   * `menu.getIngredients` (dev.joinposter.com/docs/v3/web/menu/getIngredients).
+   * Javob maydonlari (`ingredient_id`, `ingredient_name`, `ingredient_unit`)
+   * `menu.getProducts`ga o'xshash deb taxmin qilingan — agar Poster boshqa
+   * maydon nomlari bilan qaytarsa (masalan `unit` o'rniga boshqa nom), shu
+   * funksiya ichida moslashtirish kerak bo'ladi.
    */
-  async storageGetIngredients() {
-    const raw = cfg.poster.mock ? await mock.storageGetIngredients() : await posterCall('storage.getIngredients');
+  async menuGetIngredients() {
+    const raw = cfg.poster.mock ? await mock.storageGetIngredients() : await posterCall('menu.getIngredients');
     return dedupeById(raw, 'ingredient_id');
   },
 

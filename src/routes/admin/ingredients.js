@@ -13,7 +13,7 @@ router.get('/', requireAuth, async (req, res) => {
 // Poster'dagi "Поставщик = Закупка" ostida kiritilgan ingredientlarni olib,
 // mahalliy ro'yxatga (poster_ingredient_id bo'yicha) sinxronlaydi.
 router.post('/sync', requireAdminOrCurator('ingredients:write'), async (req, res) => {
-  const items = await poster.storageGetIngredients();
+  const items = await poster.menuGetIngredients();
   let created = 0;
   let updated = 0;
   const skipped = [];

@@ -55,6 +55,60 @@ quyidagi taxminlar hali haqiqiy Poster hisobida tekshirilmagan:
 Birinchi solishtirishdan keyin bu qiymatlar Poster'dagi haqiqiy ID'lar bilan
 mos kelmasa, xabar bering — moslashtirib beraman.
 
+**TUZATILGAN xato (Step 3):** Bozorlik ingredientlarini Poster'dan sinxronlashda
+avval noto'g'ri `storage.getIngredients` metodi ishlatilgan edi va bu haqiqiy
+Poster hisobida **HTTP 405** xato qaytargan (bunday metod umuman yo'q). Rasmiy
+hujjat asosida to'g'ri metod — **`menu.getIngredients`** — ga almashtirildi
+(`src/lib/poster.js`, `menuGetIngredients()`). Javob maydonlari hali ham
+taxminiy (`ingredient_id`/`ingredient_name`/`ingredient_unit`) — agar Poster
+boshqa nom bilan qaytarsa, xabar bering.
+
+**TUZATILGAN xato (Step 6):** "Posterga kiritish" (`storage.createSupply`) ham
+HTTP 405 qaytargan — bu safar sabab boshqacha edi: `posterCall()` yordamchisi
+**barcha** so'rovlarni (jumladan yozish/yaratish amallarini ham) GET sifatida
+yuborar edi. Poster'da "get*" metodlar GET, lekin "create*"/"yozish" metodlari
+odatda POST talab qiladi. `posterCall()` endi ikkalasini ham qo'llab-quvvatlaydi.
+
+**TUZATILGAN (Step 7):** POST'ga o'tkazilgandan keyin Poster **34-kodli** ichki
+xato qaytargan edi — sabab: yuborilgan payload tuzilishi Poster kutgan format
+bilan mos kelmagan edi. Foydalanuvchi bilan birgalikda (Chrome DevTools →
+Network orqali) haqiqiy Poster hisobida **`supplier_id=1`** ("Закупка") va
+**`storage_id=1`** ("Склад 1") ekanligi tasdiqlandi, va haqiqiy ishlaydigan
+misol asosida to'g'ri so'rov tuzilishi topildi:
+```json
+{
+  "supply": {"date": "2026-09-24 14:30:00", "supplier_id": "1", "storage_id": "1", "packing": "1"},
+  "ingredient": [{"id": "138", "type": "1", "num": "3", "sum": "6"}]
+}
+```
+`src/lib/poster.js`dagi `createSupply()` shu tuzilishga mos yozib chiqildi
+(`ingredient[].sum` — qatorning JAMI summasi, birlik narxi emas).
+`supplier_id`/`storage_id` `.env`'da `POSTER_SUPPLIER_ID`/`POSTER_STORAGE_ID`
+orqali o'zgartirilishi mumkin (default: ikkalasi ham `1`).
+
+**DIQQAT (eskirgan, Step 8'da tuzatildi):** yuqoridagi `type: "1"` va
+`sum` = jami summa taxminlari **noto'g'ri** ekan.
+
+**TUZATILGAN (Step 8) — RASMIY HUJJAT ASOSIDA:** foydalanuvchi Poster'ning
+rasmiy `dev.joinposter.com` hujjat sahifasidan `storage.createSupply`
+metodining to'liq parametrlar jadvalini topib berdi. Bu ikkita muhim xatoni
+aniqladi:
+- **`ingredient[].type`**: tovar/tex.karta uchun `1`, lekin **ingredient
+  uchun `4`** ekan (biz avval hammasi uchun `1` yuborayotgan edik — bu
+  Bozorlik har doim ingredient bo'lgani uchun xato edi).
+- **`ingredient[].sum`**: bu qatorning **birlik narxi** ekan (chegirmasiz),
+  jami summa EMAS (biz avval jami summani yuborayotgan edik).
+- Javob (`response`) to'g'ridan-to'g'ri yangi supply'ning **ID raqami**
+  (masalan `7`), obyekt emas — `poster_supply_id` shunga mos saqlanadi.
+- `supply_comment` (ixtiyoriy, bozorlik izohi) va `account_id` (ixtiyoriy,
+  buxgalteriya hisobi) ham hujjatda tasdiqlangan — birinchisi endi
+  yuborilyapti, ikkinchisi hozircha ishlatilmayapti (kerak bo'lsa qo'shish
+  oson).
+
+`src/lib/poster.js`dagi `createSupply()` shu rasmiy tuzilishga to'liq mos
+qilib qayta yozildi. Bu endi taxmin emas — **rasmiy hujjatdan olingan aniq
+ma'lumot**, shuning uchun ishonch darajasi ancha yuqori.
+
 ## Render + Neon'ga joylashtirish
 
 1. **GitHub**: `src/` va `public/` papkalarini **alohida-alohida** "Add file →
@@ -116,4 +170,3 @@ Bozorlikni bitta-bitta qayta hisoblash (`POST /api/cash/:date/recompute`)
 ATAYLAB faqat bitta yozuv uchun ishlaydi — butun davr uchun ommaviy qayta
 hisoblash funksiyasi Poster'ga ketma-ket ko'p so'rov yuborib, sekinlashtirish
 va rate-limit xavfini keltirib chiqarishi mumkinligi sababli qo'shilmagan.
-

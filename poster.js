@@ -200,6 +200,21 @@ const poster = {
    *      (masalan `7`), obyekt emas.
    *    - `packing` — ixtiyoriy, faqat haqiqiy fasovka ID'si bo'lsa
    *      yuboriladi; biz buni umuman yubormaymiz (default fasovka ishlatiladi).
+   * 4) Step 9 — 32-xato hujjatga aynan mos qilingandan keyin ham davom etdi.
+   *    Taxmin qilingan edi: `sum` TIYIN'da kutiladi (KPI Mondo'dagi
+   *    dash.getTransactions naqshiga o'xshab) — birlik narxi 100ga
+   *    ko'paytirilgan edi.
+   * 5) Step 10 — hujjatni yanada diqqat bilan qayta o'qib, aniqlandi:
+   *    hujjatda ikki xil joy bor — storage.getSupplies/getSupply/
+   *    getSupplyIngredients JAVOBLARI aniq "в копейках" (tiyinda) deb
+   *    yozilgan, LEKIN storage.createSupply SO'ROVIdagi `sum` maydoni
+   *    "Цена за единицу в гривнах" (asosiy valyuta birligida) deb
+   *    yozilgan — tiyin haqida so'rovda hech narsa aytilmagan. Step 9'dagi
+   *    100ga ko'paytirish shu farqni chalkashtirib, NOTO'G'RI edi — endi
+   *    bekor qilindi, so'rovda oddiy so'm summasi yuboriladi.
+   *    Barcha ID'lar (supplier_id=1, storage_id=1, ingredient.id=77
+   *    "Лед" uchun) admin panel orqali alohida tekshirilib, to'g'ri
+   *    ekanligi tasdiqlandi.
    *
    * items: [{ posterIngredientId, quantity, unitPrice }]
    */
@@ -217,7 +232,7 @@ const poster = {
         id: String(it.posterIngredientId),
         type: '4', // 4 = ingredient (rasmiy hujjatga ko'ra)
         num: String(it.quantity),
-        sum: String(it.unitPrice), // birlik narxi, jami summa emas
+        sum: String(it.unitPrice), // birlik narxi SO'M'da (hujjatga ko'ra so'rovda "в гривнах" — tiyin faqat javob maydonlarida, so'rovda emas)
       })),
     };
     return cfg.poster.mock ? mock.createSupply(body) : posterCall('storage.createSupply', body, 'POST');

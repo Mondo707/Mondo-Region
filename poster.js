@@ -252,6 +252,12 @@ const poster = {
    *    ..., ingredient[0][id]=...) sinab ko'rilmoqda — rasmiy hujjatdagi
    *    PHP misoli ($sendRequest($url,'post',$array)) odatda shu uslubda
    *    yuboradi, JSON emas.
+   * 7) Step 12 — forma-format bilan ham 32-xato o'zgarmadi. Hujjatning
+   *    o'zida ziddiyat topildi: matn tavsifida "ингредиент — type 4"
+   *    deyilgan, lekin storage.getSupply javobining haqiqiy misolida bir
+   *    ingredient ("Шен Да Бай Ча-Дзень Гу", birlik "kg") type=1 bilan
+   *    saqlangan ko'rsatilgan. Endi type=4 o'rniga type=1 sinalmoqda —
+   *    haqiqiy misolga ishonib.
    *
    * items: [{ posterIngredientId, quantity, unitPrice }]
    */
@@ -267,7 +273,7 @@ const poster = {
       supply,
       ingredient: items.map((it) => ({
         id: String(it.posterIngredientId),
-        type: '4', // 4 = ingredient (rasmiy hujjatga ko'ra)
+        type: '1', // Step 12: getSupply'ning haqiqiy javob misolida ingredient uchun type=1 ko'ringan (tavsifdagi 4 emas)
         num: String(it.quantity),
         sum: String(it.unitPrice), // birlik narxi SO'M'da (hujjatga ko'ra so'rovda "в гривнах" — tiyin faqat javob maydonlarida, so'rovda emas)
       })),

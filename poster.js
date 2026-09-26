@@ -29,12 +29,41 @@ function dedupeById(items, idField) {
   return Array.from(map.values());
 }
 
+// PHP uslubidagi ichma-ich array/object'larni forma-kalitlarga yozadi:
+// {supply:{date:'x'}, ingredient:[{id:'1'}]} ->
+//   supply[date]=x, ingredient[0][id]=1
+function flattenToFormPairs(obj, prefix, pairs) {
+  if (Array.isArray(obj)) {
+    obj.forEach((v, i) => flattenToFormPairs(v, `${prefix}[${i}]`, pairs));
+  } else if (obj !== null && typeof obj === 'object') {
+    for (const [k, v] of Object.entries(obj)) {
+      flattenToFormPairs(v, prefix ? `${prefix}[${k}]` : k, pairs);
+    }
+  } else if (obj !== undefined && obj !== null) {
+    pairs.push([prefix, String(obj)]);
+  }
+  return pairs;
+}
+
 async function posterCall(method, params = {}, httpMethod = 'GET') {
   const url = new URL(`${cfg.poster.baseUrl}/api/${method}`);
   url.searchParams.set('token', cfg.poster.token);
 
   let res;
-  if (httpMethod === 'POST') {
+  if (httpMethod === 'FORM') {
+    // Ba'zi eski uslubdagi POST metodlar (masalan storage.createSupply)
+    // JSON emas, an'anaviy PHP-forma ko'rinishida (application/x-www-form-
+    // urlencoded, ichma-ich array'lar uchun kvadrat qavs yozuvi) kutishi
+    // mumkin — rasmiy hujjatdagi misol shu uslubda ($sendRequest($url,
+    // 'post', $array) — PHP'da bu odatda shunday yuboriladi).
+    const pairs = flattenToFormPairs(params, '', []);
+    const body = new URLSearchParams(pairs);
+    res = await fetch(url.toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    });
+  } else if (httpMethod === 'POST') {
     // Yozish/yaratish amallari (masalan storage.createSupply) — Poster bunday
     // metodlarni GET bilan qabul qilmaydi (HTTP 405 qaytaradi), token GET
     // so'rovlaridagidek query'da qoladi, ma'lumot esa JSON body'da yuboriladi.
@@ -215,6 +244,14 @@ const poster = {
    *    Barcha ID'lar (supplier_id=1, storage_id=1, ingredient.id=77
    *    "Лед" uchun) admin panel orqali alohida tekshirilib, to'g'ri
    *    ekanligi tasdiqlandi.
+   * 6) Step 11 — barcha maydonlar hujjatga mos bo'lsa-da, 32-xato bir xil
+   *    qolaverdi (o'zgarmadi) — bu muhim signal: muammo bitta noto'g'ri
+   *    qiymatda emas, ehtimol so'rovning o'zi butunlay noto'g'ri formatda
+   *    o'qilyapti. Endi JSON o'rniga forma-format (application/x-www-
+   *    form-urlencoded, PHP uslubidagi kvadrat qavs yozuvi: supply[date]=
+   *    ..., ingredient[0][id]=...) sinab ko'rilmoqda — rasmiy hujjatdagi
+   *    PHP misoli ($sendRequest($url,'post',$array)) odatda shu uslubda
+   *    yuboradi, JSON emas.
    *
    * items: [{ posterIngredientId, quantity, unitPrice }]
    */
@@ -235,7 +272,7 @@ const poster = {
         sum: String(it.unitPrice), // birlik narxi SO'M'da (hujjatga ko'ra so'rovda "в гривнах" — tiyin faqat javob maydonlarida, so'rovda emas)
       })),
     };
-    return cfg.poster.mock ? mock.createSupply(body) : posterCall('storage.createSupply', body, 'POST');
+    return cfg.poster.mock ? mock.createSupply(body) : posterCall('storage.createSupply', body, 'FORM');
   },
 };
 

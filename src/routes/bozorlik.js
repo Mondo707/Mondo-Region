@@ -219,16 +219,17 @@ router.post('/:id/post-to-poster', requireAdminOrCurator('bozorlik:approve_post'
 
   const result = await poster.createSupply({
     businessDate: businessDateStr,
+    comment: entry.comment,
     items: itemRows.map((it) => ({
       posterIngredientId: it.poster_ingredient_id,
       quantity: Number(it.quantity),
-      sum: Number(it.sum),
+      unitPrice: Number(it.unit_price),
     })),
   });
 
   const { rows: updated } = await pool.query(
     `UPDATE bozorlik_entries SET status = 'posted', posted_at = now(), poster_supply_id = $1 WHERE id = $2 RETURNING *`,
-    [result.supply_id, entry.id]
+    [String(result), entry.id]
   );
   res.json({ entry: updated[0] });
 });

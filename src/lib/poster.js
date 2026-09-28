@@ -29,6 +29,18 @@ function dedupeById(items, idField) {
   return Array.from(map.values());
 }
 
+// Poster xatosini o'qiladigan matnga aylantiradi. Poster javobi ikki xil
+// ko'rinishda kelishi mumkin: {"error":32,"message":"..."} yoki
+// {"error":{"code":11,"message":"..."}}. Avval faqat raqam ("32") ko'rsatilar
+// edi va haqiqiy sabab ("product_id[0] is undefined") yashirin qolgan edi.
+function describePosterError(json) {
+  const e = json.error;
+  if (e && typeof e === 'object') {
+    return `${e.code !== undefined ? e.code : ''}${e.message ? ': ' + e.message : ''}`.trim() || JSON.stringify(e);
+  }
+  return `${e}${json.message ? ': ' + json.message : ''}`;
+}
+
 async function posterCall(method, params = {}, httpMethod = 'GET') {
   const url = new URL(`${cfg.poster.baseUrl}/api/${method}`);
   url.searchParams.set('token', cfg.poster.token);
@@ -37,7 +49,8 @@ async function posterCall(method, params = {}, httpMethod = 'GET') {
   if (httpMethod === 'POST') {
     // Yozish/yaratish amallari (masalan storage.createSupply) — Poster bunday
     // metodlarni GET bilan qabul qilmaydi (HTTP 405 qaytaradi), token GET
-    // so'rovlaridagidek query'da qoladi, ma'lumot esa JSON body'da yuboriladi.
+    // so'rovlaridagidek query'da qoladi, ma'lumot esa JSON body'da yuboriladi
+    // (haqiqiy hisobda curl/PowerShell bilan tasdiqlangan).
     res = await fetch(url.toString(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -50,12 +63,19 @@ async function posterCall(method, params = {}, httpMethod = 'GET') {
     res = await fetch(url.toString(), { method: 'GET' });
   }
 
-  if (!res.ok) {
-    throw new Error(`Poster API xatosi: ${method} -> HTTP ${res.status}`);
+  // Poster ba'zan xatoni HTTP 4xx bilan qaytaradi, lekin tanasida sabab bo'ladi.
+  const text = await res.text();
+  let json = null;
+  try { json = JSON.parse(text); } catch (e) { /* JSON emas */ }
+
+  if (json && json.error) {
+    throw new Error(`Poster API xatosi: ${method} -> ${describePosterError(json)}`);
   }
-  const json = await res.json();
-  if (json.error) {
-    throw new Error(`Poster API xatosi: ${method} -> ${JSON.stringify(json.error)}`);
+  if (!res.ok) {
+    throw new Error(`Poster API xatosi: ${method} -> HTTP ${res.status}${text ? ' ' + text.slice(0, 200) : ''}`);
+  }
+  if (!json) {
+    throw new Error(`Poster API xatosi: ${method} -> JSON bo'lmagan javob: ${text.slice(0, 200)}`);
   }
   return json.response;
 }
@@ -107,8 +127,9 @@ const mock = {
     ];
   },
   async createSupply(payload) {
-    // Sinov uchun — haqiqiy Poster javobi supply_id qaytaradi.
-    return { supply_id: `mock-${Date.now()}` };
+    // Rasmiy hujjatga ko'ra haqiqiy Poster javobi to'g'ridan-to'g'ri raqam
+    // (masalan 7) — obyekt emas. Sinov uchun shunga mos son qaytaramiz.
+    return Date.now() % 100000;
   },
 };
 
@@ -183,32 +204,42 @@ const poster = {
   },
 
   /**
-   * Bozorlikni Poster'ga "Закупка" (Postavshik=Bozor, storage_id/supplier_id=1)
-   * formatida supply sifatida yuboradi.
+   * Bozorlikni Poster'ga "Закупка" (supplier_id=1, storage_id=1) formatida
+   * supply sifatida yuboradi. HAQIQIY HISOBDA TASDIQLANGAN (PowerShell orqali
+   * to'g'ridan-to'g'ri so'rov, Poster javobi {"success":1,"response":387}):
    *
-   * TUZATILDI (2 marta):
-   * 1) Avval GET so'rov yuborilar edi (HTTP 405) — endi POST.
-   * 2) Payload tuzilishi Poster'ning haqiqiy so'rov formatiga moslashtirildi
-   *    (haqiqiy ishlaydigan misol asosida tasdiqlangan: {supply:{...},
-   *    ingredient:[...]}), supplier_id/storage_id esa Network panelidan
-   *    tasdiqlangan qiymatlar (ikkalasi ham "1").
+   *   POST /api/storage.createSupply?token=...   Content-Type: application/json
+   *   { "supply": { "date": "Y-m-d H:i:s", "supplier_id": "1", "storage_id": "1",
+   *                 "supply_comment": "..." },
+   *     "ingredient": [ { "id": "77", "type": "4", "num": "1", "sum": "7000" } ] }
    *
-   * items: [{ posterIngredientId, quantity, sum }] — sum shu qatorning
-   * JAMI summasi (miqdor x narx), birlik narxi emas — Poster shunday kutadi.
+   * MUHIM QOIDALAR (uzoq izlanishdan keyin aniqlangan):
+   *  - ingredient[].type = "4" (ingredient). type="1" (tovar) bo'lsa Poster
+   *    {"error":32,"message":"product_id[0] is undefined"} qaytaradi — 32-xato
+   *    "ID mavjud emas" ma'nosida edi, lekin sabab ID emas, noto'g'ri type edi.
+   *  - Tana JSON (forma-format kerak emas).
+   *  - ingredient[].sum = BIRLIK NARXI, oddiy so'mda (1 kg x 7000 => 7 000 so'm;
+   *    tiyinga ko'paytirilmaydi). Tiyin faqat getSupplies kabi JAVOBLARDA.
+   *  - Javob: response = yangi poставkaning ID raqami.
+   *  - packing / account_id / tax_id ixtiyoriy, yuborilmaydi.
+   *
+   * items: [{ posterIngredientId, quantity, unitPrice }]
    */
-  async createSupply({ businessDate, items }) {
+  async createSupply({ businessDate, comment, items }) {
+    const supply = {
+      date: formatPosterSupplyDate(businessDate),
+      supplier_id: cfg.poster.supplierId,
+      storage_id: cfg.poster.storageId,
+    };
+    if (comment) supply.supply_comment = comment;
+
     const body = {
-      supply: {
-        date: formatPosterSupplyDate(businessDate),
-        supplier_id: cfg.poster.supplierId,
-        storage_id: cfg.poster.storageId,
-        packing: '1',
-      },
+      supply,
       ingredient: items.map((it) => ({
         id: String(it.posterIngredientId),
-        type: '1',
+        type: '4', // 4 = ingredient. type=1 (tovar) bilan Poster "product_id[0] is undefined" (xato 32) qaytaradi
         num: String(it.quantity),
-        sum: String(it.sum),
+        sum: String(it.unitPrice), // birlik narxi SO'M'da (hujjatga ko'ra so'rovda "в гривнах" — tiyin faqat javob maydonlarida, so'rovda emas)
       })),
     };
     return cfg.poster.mock ? mock.createSupply(body) : posterCall('storage.createSupply', body, 'POST');

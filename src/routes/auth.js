@@ -1,50 +1,51 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { pool } = require('../db/db');
-const { JWT_SECRET } = require('../middleware/auth');
+const { pool } = require('../db');
+const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
 router.post('/login', async (req, res) => {
-  const { login, password } = req.body || {};
-  if (!login || !password) {
-    return res.status(400).json({ error: 'login va password kerak' });
+  const { username, password } = req.body || {};
+  if (!username || !password) {
+    return res.status(400).json({ error: "Login va parol kiritilishi shart" });
+  }
+  const { rows } = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+  const user = rows[0];
+  if (!user || !user.active) {
+    return res.status(401).json({ error: "Login yoki parol noto'g'ri" });
+  }
+  const ok = await bcrypt.compare(password, user.password_hash);
+  if (!ok) {
+    return res.status(401).json({ error: "Login yoki parol noto'g'ri" });
   }
 
-  try {
-    const result = await pool.query('SELECT * FROM users WHERE login = $1', [login]);
-    const user = result.rows[0];
-    if (!user) return res.status(401).json({ error: 'Login yoki parol xato' });
+  req.session.user = {
+    id: user.id,
+    username: user.username,
+    full_name: user.full_name,
+    role: user.role,
+    position_id: user.position_id,
+    allowed_sections: user.allowed_sections || [],
+    show_sales_widget: user.show_sales_widget,
+  };
 
-    const ok = bcrypt.compareSync(password, user.password_hash);
-    if (!ok) return res.status(401).json({ error: 'Login yoki parol xato' });
+  const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').toString();
+  await pool.query('INSERT INTO login_history(user_id, ip) VALUES ($1,$2)', [user.id, ip]);
 
-    if (!user.is_active) {
-      return res.status(403).json({ error: 'Bu foydalanuvchi faolsizlantirilgan. Administratorga murojaat qiling.' });
-    }
+  res.json({ user: req.session.user });
+});
 
-    await pool.query('UPDATE users SET last_login_at = now() WHERE id = $1', [user.id]);
-    await pool.query(
-      'INSERT INTO login_history (user_id, login, role, logged_in_at) VALUES ($1, $2, $3, now())',
-      [user.id, user.login, user.role]
-    );
+router.post('/logout', requireAuth, (req, res) => {
+  req.session.destroy(() => {
+    res.clearCookie('mondo.sid');
+    res.json({ ok: true });
+  });
+});
 
-    const allowedSpots = JSON.parse(user.allowed_spots || '[]');
-    const allowedSections = JSON.parse(user.allowed_sections || '["kpi","daily_sales","bonus_table","cash","savdo","login_history","portsiya"]');
-    const token = jwt.sign(
-      { id: user.id, login: user.login, role: user.role, allowed_spots: allowedSpots, allowed_sections: allowedSections },
-      JWT_SECRET,
-      { expiresIn: '12h' }
-    );
-
-    res.json({
-      token,
-      user: { id: user.id, login: user.login, role: user.role, allowed_spots: allowedSpots, allowed_sections: allowedSections },
-    });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+router.get('/me', (req, res) => {
+  if (!req.session || !req.session.user) return res.json({ user: null });
+  res.json({ user: req.session.user });
 });
 
 module.exports = router;

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kirish tarixi — Mondo Region</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="assets/logo.png">
+</head>
+<body>
+<div class="app-shell">
+  <div class="sidebar" id="sidebar-root"></div>
+  <div class="main">
+    <div class="page-title">Kirish tarixi</div>
+    <div class="page-sub">Kim, qachon tizimga kirgani</div>
+    <div class="card" style="padding:0;overflow:auto;">
+      <table id="hist-table"></table>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/nav.js"></script>
+<script>
+  (async () => {
+    const user = await bootPage();
+    if (!user) return;
+    const { history } = await api('/login-history');
+    document.getElementById('hist-table').innerHTML = `
+      <thead><tr><th>F.I.O</th><th>Login</th><th>Rol</th><th>Vaqt</th><th>IP</th></tr></thead>
+      <tbody>${history.map((h) => `
+        <tr>
+          <td>${h.full_name}</td>
+          <td>${h.username}</td>
+          <td>${h.role}</td>
+          <td>${new Date(h.logged_in_at).toLocaleString('uz-UZ')}</td>
+          <td style="color:var(--muted);">${h.ip || '—'}</td>
+        </tr>`).join('') || '<tr><td class="empty" colspan="5">Ma\'lumot yo\'q</td></tr>'}</tbody>`;
+  })();
+</script>
+</body>
+</html>

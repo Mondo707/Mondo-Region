@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="uz">
+<head><meta charset="utf-8"><title>Mondo Region</title></head>
+<body>
+<script>
+  fetch('/api/auth/me', { credentials: 'same-origin' })
+    .then((r) => r.json())
+    .then((d) => { window.location.href = d.user ? '/dashboard.html' : '/login.html'; })
+    .catch(() => { window.location.href = '/login.html'; });
+</script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kassa jurnali — Mondo Region</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="assets/logo.png">
+</head>
+<body>
+<div class="app-shell">
+  <div class="sidebar" id="sidebar-root"></div>
+  <div class="main">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div class="page-title">Kassa jurnali</div>
+      <a href="cash-entry.html" style="font-size:12.5px;font-weight:600;color:var(--purple);">← Bugungi kassaga qaytish</a>
+    </div>
+    <div class="page-sub">Har bir kun uchun umumiy kassa. Sana ustiga bosing — kiritish sahifasi shu kun bilan ochiladi.</div>
+
+    <div style="display:flex;gap:24px;">
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;">Kassa jurnali</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:11.5px;color:var(--muted);">Dan</span>
+            <input type="date" id="k-from">
+            <span style="font-size:11.5px;color:var(--muted);">Gacha</span>
+            <input type="date" id="k-to">
+            <a id="k-export" href="#"><button style="font-size:11.5px;padding:7px 12px;">📊 Excel</button></a>
+          </div>
+        </div>
+        <div class="card" style="padding:0;overflow:auto;max-height:600px;">
+          <table>
+            <thead><tr><th>Sana</th><th>Тоза</th><th>Rasxod</th><th>To'lov turlari</th><th>Umumiy kassa</th></tr></thead>
+            <tbody id="k-rows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="farq-col" style="flex:1;min-width:0;display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;">Farq jurnali</div>
+          <a id="f-export" href="#"><button style="font-size:11.5px;padding:7px 12px;">📊 Excel</button></a>
+        </div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:-8px;margin-bottom:10px;">Poster bilan solishtirilgan umumiy farq tarixi (Fakt − Poster)</div>
+        <div class="card" style="padding:0;overflow:auto;max-height:600px;">
+          <table>
+            <thead><tr><th>Sana</th><th>Fakt</th><th>Poster</th><th>Farq</th><th>Holat</th></tr></thead>
+            <tbody id="f-rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/nav.js"></script>
+<script>
+  async function load() {
+    const from = document.getElementById('k-from').value;
+    const to = document.getElementById('k-to').value;
+    const q = `?from=${from}&to=${to}`;
+
+    const { rows } = await api(`/cash/journal${q}`);
+    document.getElementById('k-rows').innerHTML = rows.map((r) => `
+      <tr style="cursor:pointer;" onclick="location.href='cash-entry.html?date=${r.business_date}'">
+        <td>${r.business_date}</td><td>${fmtMoney(r.toza_naqd)} so'm</td><td>${fmtMoney(r.rasxod)} so'm</td>
+        <td>${fmtMoney(r.beznal_amount)} so'm</td><td style="font-weight:700;">${fmtMoney(r.jami)} so'm</td>
+      </tr>`).join('') || '<tr><td class="empty" colspan="5">Ma\'lumot yo\'q</td></tr>';
+    document.getElementById('k-export').href = `/api/cash/journal/export.xlsx${q}`;
+
+    document.getElementById('f-export').href = `/api/cash/farq-journal/export.xlsx${q}`;
+    try {
+      const { rows: frows } = await api(`/cash/farq-journal${q}`);
+      document.getElementById('farq-col').style.display = 'block';
+      document.getElementById('f-rows').innerHTML = frows.map((r) => `
+        <tr><td>${r.business_date}</td><td>${fmtMoney(r.fakt)} so'm</td><td style="color:var(--muted);">${fmtMoney(r.poster)} so'm</td>
+        <td style="font-weight:700;color:${Math.abs(r.farq) < 1 ? 'var(--green-fg)' : 'var(--red-fg)'};">${r.farq >= 0 ? '+' : ''}${fmtMoney(r.farq)}</td>
+        <td>${Math.abs(r.farq) < 1 ? '<span class="pill pill-green">Mos</span>' : '<span class="pill pill-amber">Farq bor</span>'}</td></tr>`).join('') || '<tr><td class="empty" colspan="5">Hali solishtirilmagan</td></tr>';
+    } catch (e) { /* admin bo'lmasa ko'rinmaydi */ }
+  }
+
+  (async () => {
+    const user = await bootPage();
+    if (!user) return;
+    const to = new Date().toISOString().slice(0, 10);
+    const from = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+    document.getElementById('k-to').value = to;
+    document.getElementById('k-from').value = from;
+    document.getElementById('k-from').addEventListener('change', load);
+    document.getElementById('k-to').addEventListener('change', load);
+    await load();
+  })();
+</script>
+</body>
+</html>

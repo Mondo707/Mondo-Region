@@ -1,0 +1,1914 @@
+{
+  "categories": {
+    "Лимонады": {
+      "unit": "dona",
+      "tiers": [
+        {
+          "min": 10,
+          "max": 19,
+          "bonus": 12000
+        },
+        {
+          "min": 20,
+          "max": 29,
+          "bonus": 27600
+        },
+        {
+          "min": 30,
+          "max": 39,
+          "bonus": 46800
+        },
+        {
+          "min": 40,
+          "max": 49,
+          "bonus": 69600
+        },
+        {
+          "min": 50,
+          "max": null,
+          "bonus": 96000
+        }
+      ]
+    },
+    "Милкшейк": {
+      "unit": "dona",
+      "tiers": [
+        {
+          "min": 10,
+          "max": 19,
+          "bonus": 15000
+        },
+        {
+          "min": 20,
+          "max": 29,
+          "bonus": 34500
+        },
+        {
+          "min": 30,
+          "max": 39,
+          "bonus": 58500
+        },
+        {
+          "min": 40,
+          "max": 49,
+          "bonus": 87000
+        },
+        {
+          "min": 50,
+          "max": null,
+          "bonus": 120000
+        }
+      ]
+    },
+    "Фреш": {
+      "unit": "dona",
+      "tiers": [
+        {
+          "min": 10,
+          "max": 19,
+          "bonus": 10000
+        },
+        {
+          "min": 20,
+          "max": 29,
+          "bonus": 23000
+        },
+        {
+          "min": 30,
+          "max": 39,
+          "bonus": 39000
+        },
+        {
+          "min": 40,
+          "max": 49,
+          "bonus": 58000
+        },
+        {
+          "min": 50,
+          "max": null,
+          "bonus": 80000
+        }
+      ]
+    },
+    "Фрозен": {
+      "unit": "dona",
+      "tiers": [
+        {
+          "min": 10,
+          "max": 19,
+          "bonus": 15000
+        },
+        {
+          "min": 20,
+          "max": 29,
+          "bonus": 34500
+        },
+        {
+          "min": 30,
+          "max": 39,
+          "bonus": 58500
+        },
+        {
+          "min": 40,
+          "max": 49,
+          "bonus": 87000
+        },
+        {
+          "min": 50,
+          "max": null,
+          "bonus": 120000
+        }
+      ]
+    },
+    "Манго сок": {
+      "unit": "dona",
+      "tiers": [
+        {
+          "min": 10,
+          "max": 19,
+          "bonus": 5000
+        },
+        {
+          "min": 20,
+          "max": 29,
+          "bonus": 11500
+        },
+        {
+          "min": 30,
+          "max": 39,
+          "bonus": 19500
+        },
+        {
+          "min": 40,
+          "max": 49,
+          "bonus": 29000
+        },
+        {
+          "min": 50,
+          "max": null,
+          "bonus": 40000
+        }
+      ]
+    },
+    "Вафли": {
+      "unit": "dona",
+      "tiers": [
+        {
+          "min": 10,
+          "max": 19,
+          "bonus": 25000
+        },
+        {
+          "min": 20,
+          "max": 29,
+          "bonus": 57500
+        },
+        {
+          "min": 30,
+          "max": 39,
+          "bonus": 97500
+        },
+        {
+          "min": 40,
+          "max": 49,
+          "bonus": 145000
+        },
+        {
+          "min": 50,
+          "max": null,
+          "bonus": 200000
+        }
+      ]
+    },
+    "Десерты": {
+      "unit": "dona",
+      "tiers": [
+        {
+          "min": 10,
+          "max": 19,
+          "bonus": 15000
+        },
+        {
+          "min": 20,
+          "max": 29,
+          "bonus": 34500
+        },
+        {
+          "min": 30,
+          "max": 39,
+          "bonus": 58500
+        },
+        {
+          "min": 40,
+          "max": 49,
+          "bonus": 87000
+        },
+        {
+          "min": 50,
+          "max": null,
+          "bonus": 120000
+        }
+      ]
+    },
+    "Сан-себастьян": {
+      "unit": "dona",
+      "tiers": [
+        {
+          "min": 10,
+          "max": 19,
+          "bonus": 15000
+        },
+        {
+          "min": 20,
+          "max": 29,
+          "bonus": 34500
+        },
+        {
+          "min": 30,
+          "max": 39,
+          "bonus": 58500
+        },
+        {
+          "min": 40,
+          "max": 49,
+          "bonus": 87000
+        },
+        {
+          "min": 50,
+          "max": null,
+          "bonus": 120000
+        }
+      ]
+    },
+    "Фасовка": {
+      "unit": "dona",
+      "tiers": [
+        {
+          "min": 10,
+          "max": 19,
+          "bonus": 0
+        },
+        {
+          "min": 20,
+          "max": 29,
+          "bonus": 0
+        },
+        {
+          "min": 30,
+          "max": 39,
+          "bonus": 0
+        },
+        {
+          "min": 40,
+          "max": 49,
+          "bonus": 0
+        },
+        {
+          "min": 50,
+          "max": null,
+          "bonus": 0
+        }
+      ]
+    },
+    "Чай": {
+      "unit": "dona",
+      "tiers": [
+        {
+          "min": 10,
+          "max": 19,
+          "bonus": 0
+        },
+        {
+          "min": 20,
+          "max": 29,
+          "bonus": 0
+        },
+        {
+          "min": 30,
+          "max": 39,
+          "bonus": 0
+        },
+        {
+          "min": 40,
+          "max": 49,
+          "bonus": 0
+        },
+        {
+          "min": 50,
+          "max": null,
+          "bonus": 0
+        }
+      ]
+    },
+    "Кофе 250 мл": {
+      "unit": "dona",
+      "tiers": [
+        {
+          "min": 10,
+          "max": 19,
+          "bonus": 10000
+        },
+        {
+          "min": 20,
+          "max": 29,
+          "bonus": 23000
+        },
+        {
+          "min": 30,
+          "max": 39,
+          "bonus": 39000
+        },
+        {
+          "min": 40,
+          "max": 49,
+          "bonus": 58000
+        },
+        {
+          "min": 50,
+          "max": null,
+          "bonus": 80000
+        }
+      ]
+    },
+    "Кофе 350 мл": {
+      "unit": "dona",
+      "tiers": [
+        {
+          "min": 10,
+          "max": 19,
+          "bonus": 15000
+        },
+        {
+          "min": 20,
+          "max": 29,
+          "bonus": 34500
+        },
+        {
+          "min": 30,
+          "max": 39,
+          "bonus": 58500
+        },
+        {
+          "min": 40,
+          "max": 49,
+          "bonus": 87000
+        },
+        {
+          "min": 50,
+          "max": null,
+          "bonus": 120000
+        }
+      ]
+    },
+    "Чашка кофе": {
+      "unit": "dona",
+      "tiers": [
+        {
+          "min": 10,
+          "max": 19,
+          "bonus": 10000
+        },
+        {
+          "min": 20,
+          "max": 29,
+          "bonus": 23000
+        },
+        {
+          "min": 30,
+          "max": 39,
+          "bonus": 39000
+        },
+        {
+          "min": 40,
+          "max": 49,
+          "bonus": 58000
+        },
+        {
+          "min": 50,
+          "max": null,
+          "bonus": 80000
+        }
+      ]
+    },
+    "Айс кофе": {
+      "unit": "dona",
+      "tiers": [
+        {
+          "min": 10,
+          "max": 19,
+          "bonus": 15000
+        },
+        {
+          "min": 20,
+          "max": 29,
+          "bonus": 34500
+        },
+        {
+          "min": 30,
+          "max": 39,
+          "bonus": 58500
+        },
+        {
+          "min": 40,
+          "max": 49,
+          "bonus": 87000
+        },
+        {
+          "min": 50,
+          "max": null,
+          "bonus": 120000
+        }
+      ]
+    },
+    "Смесь": {
+      "unit": "kg",
+      "tiers": [
+        {
+          "min": 60,
+          "max": 69,
+          "bonus": 12000
+        },
+        {
+          "min": 70,
+          "max": 79,
+          "bonus": 27600
+        },
+        {
+          "min": 80,
+          "max": 89,
+          "bonus": 46800
+        },
+        {
+          "min": 90,
+          "max": 99,
+          "bonus": 69600
+        },
+        {
+          "min": 100,
+          "max": null,
+          "bonus": 96000
+        }
+      ]
+    },
+    "Шарик": {
+      "unit": "kg",
+      "tiers": [
+        {
+          "min": 30,
+          "max": 39,
+          "bonus": 10000
+        },
+        {
+          "min": 40,
+          "max": 49,
+          "bonus": 23000
+        },
+        {
+          "min": 50,
+          "max": 59,
+          "bonus": 39000
+        },
+        {
+          "min": 60,
+          "max": 69,
+          "bonus": 58000
+        },
+        {
+          "min": 70,
+          "max": null,
+          "bonus": 80000
+        }
+      ]
+    }
+  },
+  "products": [
+    {
+      "name": "Cono Can",
+      "section": "Cono фасовка",
+      "bonus_category": "Фасовка",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Cono Pistachio",
+      "section": "Cono фасовка",
+      "bonus_category": "Фасовка",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Cono Бон-бон",
+      "section": "Cono фасовка",
+      "bonus_category": "Фасовка",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Cono Бон-бон фисташка",
+      "section": "Cono фасовка",
+      "bonus_category": "Фасовка",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Fruity pop",
+      "section": "Cono фасовка",
+      "bonus_category": "Фасовка",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "3D Cono",
+      "section": "Cono фасовка",
+      "bonus_category": "Фасовка",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Картон Бон-Бон",
+      "section": "Cono фасовка",
+      "bonus_category": "Фасовка",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Картон Кокос Бон-Бон",
+      "section": "Cono фасовка",
+      "bonus_category": "Фасовка",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Американо Ice",
+      "section": "Ice Coffee",
+      "bonus_category": "Айс кофе",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Каппучино Ice",
+      "section": "Ice Coffee",
+      "bonus_category": "Айс кофе",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Латте Ice",
+      "section": "Ice Coffee",
+      "bonus_category": "Айс кофе",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Фрапучино Ice",
+      "section": "Ice Coffee",
+      "bonus_category": "Айс кофе",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Айс-Ти классический 1Л",
+      "section": "Jiz-Biz лимонады",
+      "bonus_category": "Лимонады",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Лимонад Манго-Маракуйя 1Л",
+      "section": "Jiz-Biz лимонады",
+      "bonus_category": "Лимонады",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Лимонад Тархун-яблоко 1Л",
+      "section": "Jiz-Biz лимонады",
+      "bonus_category": "Лимонады",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Мохито классический 1Л",
+      "section": "Jiz-Biz лимонады",
+      "bonus_category": "Лимонады",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Мохито клубничный 1Л",
+      "section": "Jiz-Biz лимонады",
+      "bonus_category": "Лимонады",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Банан шоколад",
+      "section": "Бабл вафли",
+      "bonus_category": "Вафли",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Вафли бокс",
+      "section": "Бабл вафли",
+      "bonus_category": "Вафли",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Клубника банан",
+      "section": "Бабл вафли",
+      "bonus_category": "Вафли",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Клубника шоколад",
+      "section": "Бабл вафли",
+      "bonus_category": "Вафли",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Мороженой шоколад",
+      "section": "Бабл вафли",
+      "bonus_category": "Вафли",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Фисташка шоколад",
+      "section": "Бабл вафли",
+      "bonus_category": "Вафли",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Бельгийские Вафли (банан)",
+      "section": "Вафли",
+      "bonus_category": "Вафли",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Бельгийские Вафли (клубника и банан)",
+      "section": "Вафли",
+      "bonus_category": "Вафли",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Бельгийские Вафли (клубника)",
+      "section": "Вафли",
+      "bonus_category": "Вафли",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Бельгийские Вафли с мороженым",
+      "section": "Вафли",
+      "bonus_category": "Вафли",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Фри вафли",
+      "section": "Вафли",
+      "bonus_category": "Вафли",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Фри вафли фруктовый",
+      "section": "Вафли",
+      "bonus_category": "Вафли",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Рожок",
+      "section": "Главный экран",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Стакан",
+      "section": "Главный экран",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Даниш",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Клубничный Сан-Себастьян",
+      "section": "Десерты",
+      "bonus_category": "Сан-себастьян",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Манго Сан-Себастьян",
+      "section": "Десерты",
+      "bonus_category": "Сан-себастьян",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Фисташковый Сан-Себастьян",
+      "section": "Десерты",
+      "bonus_category": "Сан-себастьян",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Шоколадный Сан-Себастьян",
+      "section": "Десерты",
+      "bonus_category": "Сан-себастьян",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Штучный Сан-Себастьян большой",
+      "section": "Десерты",
+      "bonus_category": "Сан-себастьян",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Штучный Сан-Себастьян маленький",
+      "section": "Десерты",
+      "bonus_category": "Сан-себастьян",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Коктейль банановый старый",
+      "section": "Коктейль",
+      "bonus_category": "Милкшейк",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Коктейль клубничный старый",
+      "section": "Коктейль",
+      "bonus_category": "Милкшейк",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Коктейль молочный старый",
+      "section": "Коктейль",
+      "bonus_category": "Милкшейк",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Коктейль шоколадный старый",
+      "section": "Коктейль",
+      "bonus_category": "Милкшейк",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Банановый коктейль Бахор",
+      "section": "Коктейль Бахор",
+      "bonus_category": "Милкшейк",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Вишня коктейль Бахор",
+      "section": "Коктейль Бахор",
+      "bonus_category": "Милкшейк",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Молочный коктейль Бахор",
+      "section": "Коктейль Бахор",
+      "bonus_category": "Милкшейк",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Орео коктейль Бахор",
+      "section": "Коктейль Бахор",
+      "bonus_category": "Милкшейк",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Персик коктейль Бахор",
+      "section": "Коктейль Бахор",
+      "bonus_category": "Милкшейк",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Шоколадный коктейль Бахор",
+      "section": "Коктейль Бахор",
+      "bonus_category": "Милкшейк",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Американо",
+      "section": "Кофе",
+      "bonus_category": "Кофе 250 мл",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Американо Double",
+      "section": "Кофе",
+      "bonus_category": "Кофе 350 мл",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Какао маршмеллоу",
+      "section": "Кофе",
+      "bonus_category": "Кофе 350 мл",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Каппучино",
+      "section": "Кофе",
+      "bonus_category": "Кофе 250 мл",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Каппучино Double",
+      "section": "Кофе",
+      "bonus_category": "Кофе 350 мл",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Латте",
+      "section": "Кофе",
+      "bonus_category": "Кофе 350 мл",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Раф карамельный",
+      "section": "Кофе",
+      "bonus_category": "Кофе 350 мл",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Флэт Вайт",
+      "section": "Кофе",
+      "bonus_category": "Кофе 250 мл",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Эспрессо",
+      "section": "Кофе",
+      "bonus_category": "Кофе 250 мл",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Эспрессо Double",
+      "section": "Кофе",
+      "bonus_category": "Кофе 250 мл",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Айс Ти",
+      "section": "Лимонады",
+      "bonus_category": "Лимонады",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Ананас - Манго",
+      "section": "Лимонады",
+      "bonus_category": "Лимонады",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Лимонад",
+      "section": "Лимонады",
+      "bonus_category": "Лимонады",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Личи - Маракуйя",
+      "section": "Лимонады",
+      "bonus_category": "Лимонады",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Малина - Роза",
+      "section": "Лимонады",
+      "bonus_category": "Лимонады",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Манго сок 350 мл",
+      "section": "Лимонады",
+      "bonus_category": "Манго сок",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Манговый сок 500 мл",
+      "section": "Лимонады",
+      "bonus_category": "Манго сок",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Мохито",
+      "section": "Лимонады",
+      "bonus_category": "Лимонады",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Тархун - Яблоко",
+      "section": "Лимонады",
+      "bonus_category": "Лимонады",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Коктейль банановый",
+      "section": "Милкшейки",
+      "bonus_category": "Милкшейк",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Коктейль вишня",
+      "section": "Милкшейки",
+      "bonus_category": "Милкшейк",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Коктейль молочный",
+      "section": "Милкшейки",
+      "bonus_category": "Милкшейк",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Коктейль орео",
+      "section": "Милкшейки",
+      "bonus_category": "Милкшейк",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Коктейль персик",
+      "section": "Милкшейки",
+      "bonus_category": "Милкшейк",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Коктейль шоколадный",
+      "section": "Милкшейки",
+      "bonus_category": "Милкшейк",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Bonaqua",
+      "section": "Напитки",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Coca Cola 0.5",
+      "section": "Напитки",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Fanta 0.5",
+      "section": "Напитки",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Flash",
+      "section": "Напитки",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Pepsi 0.5",
+      "section": "Напитки",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Sprite 0.5",
+      "section": "Напитки",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Вода 0.5 без газ",
+      "section": "Напитки",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Сочная долина 0.2",
+      "section": "Напитки",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Kombo",
+      "section": "Прочие",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Контейнер одноразовый",
+      "section": "Прочие",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Коробка (лодка) для ФРИ вафли",
+      "section": "Прочие",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Коробка для бельгийского вафли",
+      "section": "Прочие",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Коробка для кофе",
+      "section": "Прочие",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Крафт пакет",
+      "section": "Прочие",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Крышка для стакана",
+      "section": "Прочие",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Молоко(доп)",
+      "section": "Прочие",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Рожок пустой Б.",
+      "section": "Прочие",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Рожок пустой М.",
+      "section": "Прочие",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "сироп доп",
+      "section": "Прочие",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Стакан для мини мороженого",
+      "section": "Прочие",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Стакан одноразовый",
+      "section": "Прочие",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Упаковка для Coin вафли",
+      "section": "Прочие",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "mubins(quyma)",
+      "section": "Разливное мороженое",
+      "bonus_category": "Смесь",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.12
+    },
+    {
+      "name": "Strawberry Delight",
+      "section": "Разливное мороженое",
+      "bonus_category": "Смесь",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.1
+    },
+    {
+      "name": "Белая фисташка",
+      "section": "Разливное мороженое",
+      "bonus_category": "Смесь",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.1
+    },
+    {
+      "name": "Белая ягода",
+      "section": "Разливное мороженое",
+      "bonus_category": "Смесь",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.1
+    },
+    {
+      "name": "Белый вишневый Амарена",
+      "section": "Разливное мороженое",
+      "bonus_category": "Смесь",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.1
+    },
+    {
+      "name": "Большой рожок",
+      "section": "Разливное мороженое",
+      "bonus_category": "Смесь",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.16
+    },
+    {
+      "name": "Большой стаканчик",
+      "section": "Разливное мороженое",
+      "bonus_category": "Смесь",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.16
+    },
+    {
+      "name": "Кокос и шоколад",
+      "section": "Разливное мороженое",
+      "bonus_category": "Смесь",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.1
+    },
+    {
+      "name": "Контейнер 500гр разливной",
+      "section": "Разливное мороженое",
+      "bonus_category": "Смесь",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.5
+    },
+    {
+      "name": "Кремианка",
+      "section": "Разливное мороженое",
+      "bonus_category": "Смесь",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.16
+    },
+    {
+      "name": "Манго",
+      "section": "Разливное мороженое",
+      "bonus_category": "Смесь",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.1
+    },
+    {
+      "name": "Средний рожок",
+      "section": "Разливное мороженое",
+      "bonus_category": "Смесь",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.1
+    },
+    {
+      "name": "Средний стаканчик",
+      "section": "Разливное мороженое",
+      "bonus_category": "Смесь",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.12
+    },
+    {
+      "name": "Стаканчик детский",
+      "section": "Разливное мороженое",
+      "bonus_category": "Смесь",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.1
+    },
+    {
+      "name": "Шоколад",
+      "section": "Разливное мороженое",
+      "bonus_category": "Смесь",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.1
+    },
+    {
+      "name": "Банано-финиковый раф",
+      "section": "Рамазан",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Латте прянная тыква",
+      "section": "Рамазан",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Тай кофе",
+      "section": "Рамазан",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Фисташковый капучино",
+      "section": "Рамазан",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Фрапучино Финик-орех",
+      "section": "Рамазан",
+      "bonus_category": "-",
+      "counts_for_bonus": false,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Calippo а асс.",
+      "section": "Фасованное мороженное",
+      "bonus_category": "Фасовка",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Готовое мороженое в контейнере 500г",
+      "section": "Фасованное мороженное",
+      "bonus_category": "Фасовка",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Мини мороженое в асс.",
+      "section": "Фасованное мороженное",
+      "bonus_category": "Фасовка",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Мороженое 80г",
+      "section": "Фасованное мороженное",
+      "bonus_category": "Фасовка",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Мороженое KFC",
+      "section": "Фасованное мороженное",
+      "bonus_category": "Фасовка",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Мороженое ведро 500г",
+      "section": "Фасованное мороженное",
+      "bonus_category": "Фасовка",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Мороженое Дубай",
+      "section": "Фасованное мороженное",
+      "bonus_category": "Фасовка",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Мороженое стаканчик 120г",
+      "section": "Фасованное мороженное",
+      "bonus_category": "Фасовка",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Сорбет в ассортименте",
+      "section": "Фасованное мороженное",
+      "bonus_category": "Фасовка",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Фасованное мороженое 1кг",
+      "section": "Фасованное мороженное",
+      "bonus_category": "Фасовка",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Эскимо в ассортименте",
+      "section": "Фасованное мороженное",
+      "bonus_category": "Фасовка",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Глинтвейн Б/А",
+      "section": "Фирменные чаи",
+      "bonus_category": "Чай",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Глинтвейн Б/А чайник",
+      "section": "Фирменные чаи",
+      "bonus_category": "Чай",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Глинтвейн Б/А(архив)",
+      "section": "Фирменные чаи",
+      "bonus_category": "Чай",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Имбирный чай",
+      "section": "Фирменные чаи",
+      "bonus_category": "Чай",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Имбирный чай чайник",
+      "section": "Фирменные чаи",
+      "bonus_category": "Чай",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Малина-мята",
+      "section": "Фирменные чаи",
+      "bonus_category": "Чай",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Малина-мята чайник",
+      "section": "Фирменные чаи",
+      "bonus_category": "Чай",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Облепиха-карамель",
+      "section": "Фирменные чаи",
+      "bonus_category": "Чай",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Облепиха-карамель чайник",
+      "section": "Фирменные чаи",
+      "bonus_category": "Чай",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Апельсиновый фреш",
+      "section": "Фреш",
+      "bonus_category": "Фреш",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Морковный фреш",
+      "section": "Фреш",
+      "bonus_category": "Фреш",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Яблоко-Морковь фреш",
+      "section": "Фреш",
+      "bonus_category": "Фреш",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Яблочный фреш",
+      "section": "Фреш",
+      "bonus_category": "Фреш",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Frozen Ice Aloe kiwi",
+      "section": "Фрозен",
+      "bonus_category": "Фрозен",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Frozen Ice Coconut Pinaple",
+      "section": "Фрозен",
+      "bonus_category": "Фрозен",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Frozen Ice Raspberry Strawberries",
+      "section": "Фрозен",
+      "bonus_category": "Фрозен",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Frozen Ice Tropic",
+      "section": "Фрозен",
+      "bonus_category": "Фрозен",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Английский завтрак",
+      "section": "Чай",
+      "bonus_category": "Чай",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Жасмин",
+      "section": "Чай",
+      "bonus_category": "Чай",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Сенча",
+      "section": "Чай",
+      "bonus_category": "Чай",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Ташкентский чай",
+      "section": "Чай",
+      "bonus_category": "Чай",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Чай в асс. в стаканчике",
+      "section": "Чай",
+      "bonus_category": "Чай",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Чай в чайник",
+      "section": "Чай",
+      "bonus_category": "Чай",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Чай в чайник с лимоном",
+      "section": "Чай",
+      "bonus_category": "Чай",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Чай с лимоном в стаканчике",
+      "section": "Чай",
+      "bonus_category": "Чай",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Чай с лимоном в чайнике",
+      "section": "Чай",
+      "bonus_category": "Чай",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Чай с наватом",
+      "section": "Чай",
+      "bonus_category": "Чай",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Эрл грей",
+      "section": "Чай",
+      "bonus_category": "Чай",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Американо Double чашке",
+      "section": "Чашка кофе",
+      "bonus_category": "Чашка кофе",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Американо чашке",
+      "section": "Чашка кофе",
+      "bonus_category": "Чашка кофе",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Какао маршмеллоу чашке",
+      "section": "Чашка кофе",
+      "bonus_category": "Чашка кофе",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Каппучино Double чашке",
+      "section": "Чашка кофе",
+      "bonus_category": "Чашка кофе",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Каппучино чашке",
+      "section": "Чашка кофе",
+      "bonus_category": "Чашка кофе",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Латте чашке",
+      "section": "Чашка кофе",
+      "bonus_category": "Чашка кофе",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Раф карамельный чашке",
+      "section": "Чашка кофе",
+      "bonus_category": "Чашка кофе",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Флэт Вайт чашке",
+      "section": "Чашка кофе",
+      "bonus_category": "Чашка кофе",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Эспрессо Double чашке",
+      "section": "Чашка кофе",
+      "bonus_category": "Чашка кофе",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Эспрессо чашке",
+      "section": "Чашка кофе",
+      "bonus_category": "Чашка кофе",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "mubins(sharik)",
+      "section": "Шариковое мороженое",
+      "bonus_category": "Шарик",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.05
+    },
+    {
+      "name": "Контейнер шарики (300гр)",
+      "section": "Шариковое мороженое",
+      "bonus_category": "Шарик",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.3
+    },
+    {
+      "name": "Контейнер шарики (400гр)",
+      "section": "Шариковое мороженое",
+      "bonus_category": "Шарик",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.4
+    },
+    {
+      "name": "Кремианка шарик",
+      "section": "Шариковое мороженое",
+      "bonus_category": "Шарик",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.05
+    },
+    {
+      "name": "Рожок 2 Шарика (Gelato)",
+      "section": "Шариковое мороженое",
+      "bonus_category": "Шарик",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.1
+    },
+    {
+      "name": "Рожок 3 шарика (Gelato)",
+      "section": "Шариковое мороженое",
+      "bonus_category": "Шарик",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.15
+    },
+    {
+      "name": "Рожок Детский (Gelato)",
+      "section": "Шариковое мороженое",
+      "bonus_category": "Шарик",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.05
+    },
+    {
+      "name": "Стаканчик 2 шарика (Gelato)",
+      "section": "Шариковое мороженое",
+      "bonus_category": "Шарик",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.1
+    },
+    {
+      "name": "Стаканчик 3 шарика (Gelato)",
+      "section": "Шариковое мороженое",
+      "bonus_category": "Шарик",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.15
+    },
+    {
+      "name": "Стаканчик Детский (Gelato)",
+      "section": "Шариковое мороженое",
+      "bonus_category": "Шарик",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.05
+    },
+    {
+      "name": "Шариковое мороженое доп.",
+      "section": "Шариковое мороженое",
+      "bonus_category": "Шарик",
+      "counts_for_bonus": true,
+      "kg_per_unit": 0.05
+    },
+    {
+      "name": "Вишневый рулет",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Медовик карамельный",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Медовик классический",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Наполеон",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Пирожное клубника-банан",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Пирожное малина-мята",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Пирожное фисташковое",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Рафаэлло",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Сан Себастьян",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Сникерс",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Тирамису",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Торт милка",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Черный лес",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Чизкейк клубничный",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Чизкейк лотус",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Чизкейк маракуйя",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Эстерхайзи",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Птичие молоко шт",
+      "section": "Прочие",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Малиновый рулет",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Вишневый чизкейк",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Малиновый бархат",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Чизкейк молочный",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Торт Три шоколада",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Торт Яблочный",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Пироженое Чиз Брауни",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Пироженое Опера",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Птичье молоко",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Спартак",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    },
+    {
+      "name": "Творожный",
+      "section": "Десерты",
+      "bonus_category": "Десерты",
+      "counts_for_bonus": true,
+      "kg_per_unit": null
+    }
+  ]
+}

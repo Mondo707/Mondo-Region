@@ -1,105 +1,43 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="uz">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kirish tarixi — KPI Bonus</title>
-<script>(function(){var t=localStorage.getItem('kpi_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
-<link rel="stylesheet" href="/css/style.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kirish tarixi — Mondo Region</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="assets/logo.png">
 </head>
 <body>
-  <div class="container">
-    <div class="section">
-      <h2 style="margin-top:0;">Kirish tarixi</h2>
-      <p style="color:var(--text-dim); font-size:13px; margin-top:0;">
-        Har bir foydalanuvchi qachon tizimga kirganini ko'rish uchun.
-      </p>
-      <div class="form-row">
-        <div class="field" style="max-width:220px;">
-          <label for="lh-user-select">Foydalanuvchi</label>
-          <select id="lh-user-select"><option value="">Barchasi</option></select>
-        </div>
-        <div class="field">
-          <label for="lh-from">Sanadan</label>
-          <input type="date" id="lh-from">
-        </div>
-        <div class="field">
-          <label for="lh-to">Sanagacha</label>
-          <input type="date" id="lh-to">
-        </div>
-        <button class="btn-primary" id="lh-load-btn" style="max-width:140px;">Qidirish</button>
-      </div>
-      <table style="margin-top:14px;">
-        <thead><tr><th>Login</th><th>Rol</th><th>Kirish vaqti</th></tr></thead>
-        <tbody id="login-history-body"></tbody>
-      </table>
-      <div class="empty-state" id="login-history-empty" style="display:none;">Yozuv topilmadi</div>
+<div class="app-shell">
+  <div class="sidebar" id="sidebar-root"></div>
+  <div class="main">
+    <div class="page-title">Kirish tarixi</div>
+    <div class="page-sub">Kim, qachon tizimga kirgani</div>
+    <div class="card" style="padding:0;overflow:auto;">
+      <table id="hist-table"></table>
     </div>
   </div>
+</div>
 
-  <script src="/js/api.js"></script>
-  <script src="/js/topbar.js"></script>
-  <script>
-    requireSection('login_history');
-    renderTopbar('login_history');
-
-    async function loadUsersForFilter() {
-      try {
-        const data = await apiFetch('/login-history/users');
-        const select = document.getElementById('lh-user-select');
-        select.innerHTML = '<option value="">Barchasi</option>' +
-          data.users.map((u) => `<option value="${u.id}">${u.login}</option>`).join('');
-      } catch (e) {
-        showToast('Foydalanuvchilarni yuklashda xato: ' + e.message, true);
-      }
-    }
-
-    async function loadLoginHistory() {
-      const user_id = document.getElementById('lh-user-select').value;
-      const date_from = document.getElementById('lh-from').value;
-      const date_to = document.getElementById('lh-to').value;
-
-      const params = new URLSearchParams();
-      if (user_id) params.set('user_id', user_id);
-      if (date_from) params.set('date_from', date_from);
-      if (date_to) params.set('date_to', date_to);
-
-      try {
-        const data = await apiFetch('/login-history?' + params.toString());
-        const tbody = document.getElementById('login-history-body');
-        const emptyEl = document.getElementById('login-history-empty');
-        tbody.innerHTML = '';
-
-        if (!data.entries.length) {
-          emptyEl.style.display = 'block';
-          return;
-        }
-        emptyEl.style.display = 'none';
-
-        tbody.innerHTML = data.entries.map((e) => `
-          <tr>
-            <td>${e.login}</td>
-            <td>${e.role || '—'}</td>
-            <td>${new Date(e.logged_in_at).toLocaleString('ru-RU')}</td>
-          </tr>
-        `).join('');
-      } catch (e) {
-        showToast('Kirish tarixini yuklashda xato: ' + e.message, true);
-      }
-    }
-
-    document.getElementById('lh-load-btn').addEventListener('click', loadLoginHistory);
-
-    (async function init() {
-      const today = todayStr();
-      const monthAgo = new Date();
-      monthAgo.setDate(monthAgo.getDate() - 30);
-      document.getElementById('lh-from').value = monthAgo.toISOString().slice(0, 10);
-      document.getElementById('lh-to').value = today;
-
-      await loadUsersForFilter();
-      await loadLoginHistory();
-    })();
-  </script>
+<script src="js/api.js"></script>
+<script src="js/nav.js"></script>
+<script>
+  (async () => {
+    const user = await bootPage();
+    if (!user) return;
+    const { history } = await api('/login-history');
+    document.getElementById('hist-table').innerHTML = `
+      <thead><tr><th>F.I.O</th><th>Login</th><th>Rol</th><th>Vaqt</th><th>IP</th></tr></thead>
+      <tbody>${history.map((h) => `
+        <tr>
+          <td>${h.full_name}</td>
+          <td>${h.username}</td>
+          <td>${h.role}</td>
+          <td>${new Date(h.logged_in_at).toLocaleString('uz-UZ')}</td>
+          <td style="color:var(--muted);">${h.ip || '—'}</td>
+        </tr>`).join('') || '<tr><td class="empty" colspan="5">Ma\'lumot yo\'q</td></tr>'}</tbody>`;
+  })();
+</script>
 </body>
 </html>

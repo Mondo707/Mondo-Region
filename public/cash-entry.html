@@ -1,819 +1,311 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="uz">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kassa kiritish — KPI Bonus</title>
-<script>(function(){var t=localStorage.getItem('kpi_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
-<link rel="stylesheet" href="/css/style.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kassa kiritish — Mondo Region</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="assets/logo.png">
+<style>
+  .field-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;}
+  .field-input{width:118px;box-sizing:border-box;padding:7px 9px;border-radius:7px;border:1px solid var(--border);font-size:12.5px;text-align:right;}
+  .gold{color:#a8790f;font-weight:700;}
+  th.j{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;text-align:left;padding:7px 8px;background:#f0eff9;}
+  td.j{font-size:12.5px;padding:7px 8px;border-bottom:1px solid #efeee8;}
+</style>
 </head>
 <body>
-  <div class="container">
-    <div class="filters">
-      <div class="field">
-        <label for="spot_id">Filial</label>
-        <select id="spot_id"></select>
-      </div>
-      <div class="field">
-        <label for="entry_date">Sana</label>
-        <input type="date" id="entry_date">
-      </div>
-      <button class="btn-primary apply-btn" id="load-btn" style="max-width:160px;">Ma'lumotni yuklash</button>
-    </div>
-
-    <div class="section">
-      <h3 style="margin:0 0 4px;">Rasxodlar</h3>
-      <p class="journal-sub">Kunlik xarajatlar (masalan yetkazib berish, ta'mirlash va h.k.)</p>
-      <table class="kassa-table">
-        <thead><tr><th>Rasxod nomi</th><th style="width:160px;">Summa</th><th style="width:36px;"></th></tr></thead>
-        <tbody id="expense-body"></tbody>
-      </table>
-      <button class="add-row-btn" id="add-expense-btn">+ Rasxod qo'shish</button>
-      <div class="kassa-subtotal"><span>Umumiy rasxod (Общие Расходы)</span><b id="total-expense">0 so'm</b></div>
-    </div>
-
-    <div class="section">
-      <h3 style="margin:0 0 4px;">Kupyuralar</h3>
-      <p class="journal-sub">Kassadagi naqd pulni kupyura bo'yicha sanab kiriting</p>
-      <div class="banknote-grid" id="banknote-grid"></div>
-      <div class="kassa-subtotal"><span>Тоза (sanalgan naqd)</span><b id="total-toza">0 so'm</b></div>
-    </div>
-
-    <div class="section">
-      <h3 style="margin:0 0 4px;">To'lov turlari</h3>
-      <p class="journal-sub">Naqd pulsiz to'lovlar va boshqa kanallar</p>
-      <div class="paytype-grid" id="paytype-grid"></div>
-      <div class="kassa-subtotal"><span>To'lov turlari yig'indisi</span><b id="total-paytypes">0 so'm</b></div>
-    </div>
-
-    <div class="kassa-summary">
-      <div class="line"><span>Тоза (naqd)</span><b id="s-toza">0</b></div>
-      <div class="line"><span>+ Umumiy rasxod</span><b id="s-expense">0</b></div>
-      <div class="line"><span>+ To'lov turlari</span><b id="s-paytypes">0</b></div>
-      <div class="total-row"><span class="l">Umumiy kassa</span><span class="v" id="s-total">0 so'm</span></div>
-    </div>
-
-    <div class="section" id="compare-section">
-      <h3 style="margin:0 0 4px;">Poster bilan solishtirish</h3>
-      <p class="journal-sub" id="compare-sub">Ma'lumotlarni yuborgandan so'ng, 6 soatdan keyin shu yerda ko'rinadi.</p>
-      <div id="compare-locked" class="compare-locked">
-        <div class="lock-icon">&#128274;</div>
-        <div style="font-size:13px;">Hali yuborilmagan / vaqt kutilmoqda</div>
-      </div>
-      <div id="compare-unlocked" style="display:none;">
-        <table class="kassa-table">
-          <thead><tr><th>To'lov turi</th><th style="text-align:right;">Fakt</th><th style="text-align:right;">Poster</th><th style="text-align:right;">Farq</th></tr></thead>
-          <tbody id="compare-body"></tbody>
-        </table>
+<div class="app-shell">
+  <div class="sidebar" id="sidebar-root"></div>
+  <div class="main" style="padding-bottom:12px;">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;">
+      <div class="page-title">Kunlik kassa</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:12px;color:var(--muted);">Sana:</span>
+        <input type="date" id="date-input">
+        <a href="cash-journal.html" class="btn" style="font-size:12.5px;padding:7px 12px;">📅 Jurnal / tarix</a>
       </div>
     </div>
+    <div class="page-sub" id="date-hint">Ish kuni 05:00–05:00</div>
 
-    <div class="btn-row" style="display:flex; gap:12px;">
-      <button class="btn-primary" id="submit-btn" style="max-width:200px;">Yuborish</button>
-      <button class="btn-secondary" id="print-btn" style="display:none; max-width:200px;">Pechat qilish</button>
-      <button class="btn-secondary" id="usb-print-btn" style="display:none; max-width:220px;">USB orqali chop etish</button>
-      <button class="btn-secondary" id="usb-pair-btn" style="max-width:220px;">Printerni ulash (USB)</button>
-      <button class="btn-secondary" id="export-btn" style="max-width:200px;">Excel'ga yuklab olish</button>
-    </div>
+    <div style="display:flex;gap:20px;">
+      <div style="flex:1;display:flex;flex-direction:column;gap:14px;min-width:0;">
 
-    <div class="print-preview" id="print-preview">
-      <div class="doc-header">
-        <div><b>Торговая Точка:</b> <span id="pp-spot"></span></div>
-        <div><b>Дата:</b> <span id="pp-date"></span></div>
-      </div>
-
-      <table class="doc-table" id="pp-expense-table" style="display:none;">
-        <thead><tr><th>Расход</th><th>Сумма</th></tr></thead>
-        <tbody id="pp-expense-body"></tbody>
-      </table>
-
-      <table class="doc-table">
-        <thead><tr><th>Купюра:</th><th>Количество</th></tr></thead>
-        <tbody id="pp-banknote-body"></tbody>
-      </table>
-
-      <table class="doc-table">
-        <thead><tr><th>Общая Касса</th><th id="pp-total-kassa-cell"></th></tr></thead>
-        <tbody id="pp-paytype-body"></tbody>
-        <tbody>
-          <tr class="doc-spacer"><td colspan="2"></td></tr>
-          <tr><td>Общие Расходы</td><td id="pp-total-expense-cell"></td></tr>
-          <tr class="doc-total-row"><td>Тоза</td><td id="pp-toza-cell"></td></tr>
-        </tbody>
-      </table>
-
-      <div class="doc-sig">
-        <div><b>Ответственное лицо</b></div>
-        <div class="doc-sig-line">(Ф.И.О)______________________________(подпись)____________</div>
-        <div style="margin-top:16px;"><b>Супервайзер</b></div>
-        <div class="doc-sig-line">(Ф.И.О)______________________________(подпись)____________</div>
-      </div>
-    </div>
-
-    <div class="section journal-section" id="journal-section" style="margin-top:24px;">
-      <div class="journal-head">
-        <h2>Kassa jurnali — <span id="journal-spot-name"></span></h2>
-      </div>
-      <p class="journal-sub">Har bir kun uchun umumiy kassa. Sana ustiga bosing — yuqoridagi forma shu kun ma'lumotlari bilan to'ladi.</p>
-      <table>
-        <thead><tr><th>Sana</th><th>Тоза</th><th>Rasxod</th><th>To'lov turlari</th><th>Umumiy kassa</th></tr></thead>
-        <tbody id="journal-body"></tbody>
-      </table>
-      <div class="empty-state" id="journal-empty" style="display:none;">Hali yozuv yo'q</div>
-    </div>
-
-    <div class="section" id="diff-journal-section" style="margin-top:24px;">
-      <h2 style="margin-top:0;">Farq jurnali — <span id="diff-journal-spot-name"></span></h2>
-      <p class="journal-sub">Har bir kun uchun Poster bilan solishtirilgan umumiy farq tarixi (Fakt − Poster).</p>
-      <table>
-        <thead><tr><th>Sana</th><th>Fakt</th><th>Poster</th><th>Farq</th><th>Holat</th></tr></thead>
-        <tbody id="diff-journal-body"></tbody>
-      </table>
-      <div class="empty-state" id="diff-journal-empty" style="display:none;">Hali yozuv yo'q</div>
-    </div>
-
-    <div class="section" style="margin-top:24px;">
-      <h2 style="margin-top:0;">Filiallar bo'yicha farq hisoboti</h2>
-      <p class="journal-sub">Bir nechta filialni birga tanlab, ularning Poster bilan "Umumiy kassa" farqini solishtiring.</p>
-
-      <div class="form-row">
-        <div class="field multiselect">
-          <label>Filiallar</label>
-          <div class="ms-box" id="bdr-ms-box">
-            <span class="ms-placeholder">Barchasi (ruxsatingiz bor filiallar)</span>
+        <div class="card">
+          <div class="card-title" style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;">Rasxodlar</div>
+          <div style="font-size:11.5px;color:var(--muted);margin:2px 0 12px 0;">Xarajatlar va Bozorlik bo'limlaridan avtomatik yig'iladi — bu yerda tahrirlanmaydi</div>
+          <div style="background:#f0eff9;border-radius:8px 8px 0 0;display:grid;grid-template-columns:1fr 130px;padding:8px 10px;">
+            <div style="font-size:10px;font-weight:700;color:#5f5e70;text-transform:uppercase;">Rasxod turi</div>
+            <div style="font-size:10px;font-weight:700;color:#5f5e70;text-transform:uppercase;text-align:right;">Summa</div>
           </div>
-          <div class="ms-dropdown" id="bdr-ms-dropdown"></div>
+          <div id="rasxod-rows"></div>
+          <div style="display:flex;justify-content:space-between;padding-top:12px;margin-top:6px;border-top:1px solid var(--border);">
+            <span style="font-size:13px;font-weight:600;">Umumiy rasxod</span>
+            <span class="gold" id="rasxod-total">0 so'm</span>
+          </div>
         </div>
-        <div class="field">
-          <label for="bdr-from">Sanadan</label>
-          <input type="date" id="bdr-from">
+
+        <div class="card">
+          <div class="card-title" style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;">Kupyuralar</div>
+          <div style="font-size:11.5px;color:var(--muted);margin:2px 0 12px 0;">Kassadagi naqd pulni kupyura bo'yicha sanab kiriting</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 28px;" id="denom-grid"></div>
+          <div style="display:flex;justify-content:space-between;padding-top:12px;margin-top:6px;border-top:1px solid var(--border);">
+            <span style="font-size:13px;font-weight:600;">Тоза (sanalgan naqd)</span>
+            <span class="gold" id="toza-total">0 so'm</span>
+          </div>
         </div>
-        <div class="field">
-          <label for="bdr-to">Sanagacha</label>
-          <input type="date" id="bdr-to">
+
+        <div class="card">
+          <div class="card-title" style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;">To'lov turlari</div>
+          <div style="font-size:11.5px;color:var(--muted);margin:2px 0 12px 0;">Naqd pulsiz to'lovlar va Инкассация</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 28px;" id="payment-grid"></div>
+          <div style="display:flex;justify-content:space-between;padding-top:12px;margin-top:6px;border-top:1px solid var(--border);">
+            <span style="font-size:13px;font-weight:600;">To'lov turlari yig'indisi</span>
+            <span class="gold" id="payments-total">0 so'm</span>
+          </div>
+          <div style="margin-top:10px;">
+            <a href="admin.html#payment-types" style="font-size:11.5px;color:var(--purple);font-weight:600;">+ To'lov turini boshqarish (admin panel)</a>
+          </div>
         </div>
-        <button class="btn-primary apply-btn" id="bdr-btn" style="max-width:140px;">Qidirish</button>
       </div>
 
-      <table>
-        <thead><tr><th>Filial</th><th style="text-align:right;">Umumiy farq</th><th style="text-align:right;">O'rtacha/kun</th></tr></thead>
-        <tbody id="bdr-body"></tbody>
-      </table>
-      <div class="empty-state" id="bdr-empty" style="display:none;">Ma'lumot topilmadi</div>
+      <div style="flex:0.85;display:flex;flex-direction:column;gap:14px;min-width:0;">
+        <div style="background:#fffdf5;border:1.5px solid #f0d98a;border-radius:14px;padding:18px 20px;">
+          <div class="field-row"><span style="font-size:13px;">Тоза</span><span style="font-size:13.5px;font-weight:600;" id="sum-toza">0 so'm</span></div>
+          <div class="field-row"><span style="font-size:13px;">+ Umumiy rasxod</span><span style="font-size:13.5px;font-weight:600;" id="sum-rasxod">0 so'm</span></div>
+          <div class="field-row"><span style="font-size:13px;">+ To'lov turlari</span><span style="font-size:13.5px;font-weight:600;" id="sum-payments">0 so'm</span></div>
+          <div style="display:flex;justify-content:space-between;padding-top:12px;margin-top:8px;border-top:1px solid #f0d98a;">
+            <span style="font-size:13px;font-weight:700;color:#a8790f;text-transform:uppercase;">Umumiy kassa</span>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:#a8790f;" id="sum-jami">0 so'm</span>
+          </div>
+        </div>
+
+        <div class="card" id="compare-card" style="display:none;flex:1;overflow:auto;">
+          <div class="card-title" style="font-size:14px;">Poster bilan solishtirish</div>
+          <div id="compare-body"></div>
+        </div>
+        <div id="lock-note" class="card" style="display:none;">
+          <div style="font-size:12.5px;color:var(--muted);">Poster bilan solishtirish yuborilgandan keyin ko'rinadi.</div>
+        </div>
+
+        <div class="card" style="display:flex;align-items:center;gap:10px;">
+          <div style="width:32px;height:32px;border-radius:9px;background:#e6f0fb;display:flex;align-items:center;justify-content:center;flex-shrink:0;">🖨️</div>
+          <div style="flex:1;font-size:12.5px;font-weight:600;" id="printer-status">USB printer</div>
+          <button id="print-btn" style="font-size:12.5px;padding:9px 14px;">Chop etish</button>
+        </div>
+
+        <button class="btn-primary" id="submit-btn" style="padding:13px;">Kassani yuborish</button>
+        <div style="text-align:center;font-size:11px;color:#8b8a97;">Bozorlik/Xarajat bo'sh bo'lsa, yuborishdan oldin ogohlantiriladi</div>
+        <div id="err" class="error-box" style="display:none;"></div>
+      </div>
     </div>
   </div>
-
-  <script src="/js/api.js"></script>
-  <script src="/js/topbar.js"></script>
-  <script src="/js/escpos-printer.js"></script>
-  <script>
-    requireSection('cash');
-    renderTopbar('cash');
-
-    const BANKNOTES = [200000,100000,50000,20000,10000,5000,2000,1000];
-    const PAYTYPES = ['UZCARD','HUMO','Инкассация','Uz Qr Kod','Click','Payme','Uzum','Alif','Paynet','Yandex eats','Jiz-Biz restaurant'];
-
-    let spotsById = {};
-    let currentEntryCreatedAt = null;
-
-    function parseMoneyInput(el) {
-      return Number((el.value || '').replace(/[\s\u00A0]/g, '')) || 0;
-    }
-    function formatMoneyInputLive(el) {
-      const raw = el.value.replace(/[^\d]/g, '');
-      el.value = raw ? Number(raw).toLocaleString('ru-RU') : '';
-    }
-    function attachMoneyFormatting(root = document) {
-      root.querySelectorAll('.money-input').forEach((el) => {
-        if (el.dataset.moneyBound) return;
-        el.dataset.moneyBound = '1';
-        el.addEventListener('input', () => { formatMoneyInputLive(el); recalc(); });
-      });
-    }
-
-    async function loadSpots() {
-      const data = await apiFetch('/spots');
-      const select = document.getElementById('spot_id');
-      select.innerHTML = '';
-      data.spots.forEach((s) => {
-        spotsById[s.spot_id] = s.name;
-        const opt = document.createElement('option');
-        opt.value = s.spot_id;
-        opt.textContent = s.name;
-        select.appendChild(opt);
-      });
-    }
-
-    function buildBanknoteGrid() {
-      const grid = document.getElementById('banknote-grid');
-      grid.innerHTML = '';
-      BANKNOTES.forEach((v) => {
-        const row = document.createElement('div');
-        row.className = 'bn-row';
-        row.innerHTML = `<span class="bn-label">${v.toLocaleString('ru-RU')} so'mlik</span>
-          <input type="number" class="bn-count" data-value="${v}" value="0" min="0">
-          <span class="bn-sum" data-sum-for="${v}">0</span>`;
-        grid.appendChild(row);
-      });
-      grid.querySelectorAll('.bn-count').forEach((el) => el.addEventListener('input', recalc));
-    }
-
-    function buildPaytypeGrid() {
-      const grid = document.getElementById('paytype-grid');
-      grid.innerHTML = '';
-      PAYTYPES.forEach((p) => {
-        const row = document.createElement('div');
-        row.className = 'pt-row';
-        row.innerHTML = `<span>${p}</span><input type="text" inputmode="numeric" class="pt-amount money-input" data-name="${p}" value="0">`;
-        grid.appendChild(row);
-      });
-      attachMoneyFormatting(grid);
-    }
-
-    function addExpenseRow(name = '', amount = 0) {
-      const tbody = document.getElementById('expense-body');
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td><input type="text" class="exp-name" placeholder="Masalan: Kuryer xizmati" value="${name}"></td>
-        <td><input type="text" inputmode="numeric" class="exp-amount money-input" value="${amount || 0}"></td>
-        <td><button class="row-remove-btn" type="button">&times;</button></td>`;
-      tr.querySelector('.row-remove-btn').addEventListener('click', () => { tr.remove(); recalc(); });
-      tr.querySelector('.exp-amount').value = amount ? Number(amount).toLocaleString('ru-RU') : '0';
-      tbody.appendChild(tr);
-      attachMoneyFormatting(tr);
-      tr.querySelector('.exp-name').addEventListener('input', recalc);
-    }
-
-    function clearForm() {
-      document.getElementById('expense-body').innerHTML = '';
-      addExpenseRow();
-      document.querySelectorAll('.bn-count').forEach((el) => { el.value = 0; });
-      document.querySelectorAll('.pt-amount').forEach((el) => { el.value = '0'; });
-      recalc();
-    }
-
-    function recalc() {
-      let totalExpense = 0;
-      document.querySelectorAll('.exp-amount').forEach((i) => totalExpense += parseMoneyInput(i));
-
-      let totalToza = 0;
-      document.querySelectorAll('.bn-count').forEach((i) => {
-        const val = Number(i.dataset.value);
-        const count = Number(i.value) || 0;
-        const sum = val * count;
-        totalToza += sum;
-        const sumEl = document.querySelector(`[data-sum-for="${val}"]`);
-        if (sumEl) sumEl.textContent = sum.toLocaleString('ru-RU');
-      });
-
-      let totalPay = 0;
-      document.querySelectorAll('.pt-amount').forEach((i) => totalPay += parseMoneyInput(i));
-
-      document.getElementById('total-expense').textContent = formatMoney(totalExpense);
-      document.getElementById('total-toza').textContent = formatMoney(totalToza);
-      document.getElementById('total-paytypes').textContent = formatMoney(totalPay);
-
-      document.getElementById('s-toza').textContent = formatMoney(totalToza);
-      document.getElementById('s-expense').textContent = formatMoney(totalExpense);
-      document.getElementById('s-paytypes').textContent = formatMoney(totalPay);
-      const total = totalToza + totalExpense + totalPay;
-      document.getElementById('s-total').textContent = formatMoney(total);
-
-      return { totalExpense, totalToza, totalPay, total };
-    }
-
-    function collectFormData() {
-      const expenses = [];
-      document.querySelectorAll('#expense-body tr').forEach((tr) => {
-        const name = tr.querySelector('.exp-name').value.trim();
-        const amount = parseMoneyInput(tr.querySelector('.exp-amount'));
-        if (name || amount) expenses.push({ name, amount });
-      });
-
-      const banknotes = {};
-      document.querySelectorAll('.bn-count').forEach((i) => {
-        banknotes[i.dataset.value] = Number(i.value) || 0;
-      });
-
-      const payment_types = {};
-      document.querySelectorAll('.pt-amount').forEach((i) => {
-        payment_types[i.dataset.name] = parseMoneyInput(i);
-      });
-
-      return { expenses, banknotes, payment_types };
-    }
-
-    function setFormLocked(locked) {
-      const submitBtn = document.getElementById('submit-btn');
-      document.querySelectorAll(
-        '#expense-body input, #add-expense-btn, .bn-count, .pt-amount, #submit-btn'
-      ).forEach((el) => { el.disabled = locked; });
-
-      let banner = document.getElementById('locked-banner');
-      if (locked) {
-        if (!banner) {
-          banner = document.createElement('div');
-          banner.id = 'locked-banner';
-          banner.className = 'note';
-          banner.style.borderLeftColor = 'var(--danger)';
-          banner.style.color = 'var(--danger)';
-          banner.innerHTML = '<b style="color:var(--text); display:block;">Bu kun uchun ma\'lumot allaqachon yuborilgan</b>Faqat administrator tahrirlashi mumkin.';
-          document.querySelector('.filters').after(banner);
-        }
-      } else if (banner) {
-        banner.remove();
-      }
-    }
-
-    async function loadEntry() {
-      const spot_id = document.getElementById('spot_id').value;
-      const date = document.getElementById('entry_date').value;
-      if (!spot_id || !date) return;
-
-      clearForm();
-      setFormLocked(false);
-      try {
-        const data = await apiFetch(`/cash/entry?date=${date}&spot_id=${spot_id}`);
-        if (data.entry) {
-          currentEntryCreatedAt = data.entry.created_at;
-          document.getElementById('expense-body').innerHTML = '';
-          if (data.entry.expenses.length) {
-            data.entry.expenses.forEach((e) => addExpenseRow(e.name, e.amount));
-          } else {
-            addExpenseRow();
-          }
-          Object.entries(data.entry.banknotes).forEach(([denom, count]) => {
-            const el = document.querySelector(`.bn-count[data-value="${denom}"]`);
-            if (el) el.value = count;
-          });
-          Object.entries(data.entry.payment_types).forEach(([name, amount]) => {
-            const el = document.querySelector(`.pt-amount[data-name="${name}"]`);
-            if (el) { el.value = Number(amount).toLocaleString('ru-RU'); }
-          });
-          recalc();
-          document.getElementById('print-btn').style.display = 'inline-block';
-
-          if (!data.entry.editable_by_current_user) {
-            setFormLocked(true);
-          }
-        } else {
-          currentEntryCreatedAt = null;
-          document.getElementById('print-btn').style.display = 'none';
-        }
-        await loadCompare();
-      } catch (e) {
-        showToast('Yuklashda xato: ' + e.message, true);
-      }
-    }
-
-    async function loadCompare() {
-      const spot_id = document.getElementById('spot_id').value;
-      const date = document.getElementById('entry_date').value;
-      const lockedEl = document.getElementById('compare-locked');
-      const unlockedEl = document.getElementById('compare-unlocked');
-      const subEl = document.getElementById('compare-sub');
-
-      if (!currentEntryCreatedAt) {
-        lockedEl.style.display = 'block';
-        unlockedEl.style.display = 'none';
-        subEl.textContent = 'Ma\'lumotlarni yuborgandan so\'ng, 6 soatdan keyin shu yerda ko\'rinadi.';
-        return;
-      }
-
-      try {
-        const data = await apiFetch(`/cash/compare?date=${date}&spot_id=${spot_id}`);
-        if (data.locked) {
-          lockedEl.style.display = 'block';
-          unlockedEl.style.display = 'none';
-          const unlockTime = new Date(data.unlock_at);
-          subEl.textContent = `Ochilish vaqti: ${unlockTime.toLocaleString('ru-RU')} (6 soatdan keyin).`;
-        } else {
-          lockedEl.style.display = 'none';
-          unlockedEl.style.display = 'block';
-          const statusText = data.cash_diff_ok
-            ? `<span class="badge ok">Bonus saqlanadi</span> (farq: ${data.diff_percent}%, chegara: ${data.limit_percent}%)`
-            : `<span class="badge bad">Bonus bekor qilindi</span> (farq: ${data.diff_percent}%, chegara: ${data.limit_percent}%)`;
-          subEl.innerHTML = `Xodim kiritgan (Fakt) va Poster'dagi haqiqiy to'lovlar. ${statusText}`;
-          const tbody = document.getElementById('compare-body');
-          const rowsHtml = data.rows.map((r) => {
-            const diff = r.fakt - r.poster;
-            const ok = Math.abs(diff) < 1000;
-            const diffClass = ok ? 'diff-pos' : 'diff-neg';
-            const diffText = (diff > 0 ? '+' : '') + Math.round(diff).toLocaleString('ru-RU');
-            const rowClass = r.level === 'total' ? 'row-total' : r.level === 'subtotal' ? 'row-subtotal' : '';
-            const nameCell = r.level === 'detail' ? `<td class="indent">${r.name}</td>` : `<td>${r.name}</td>`;
-            let html = `<tr class="${rowClass}">
-              ${nameCell}
-              <td style="text-align:right;">${Math.round(r.fakt).toLocaleString('ru-RU')}</td>
-              <td style="text-align:right; color:var(--text-dim);">${Math.round(r.poster).toLocaleString('ru-RU')}</td>
-              <td style="text-align:right;" class="${diffClass}">${diffText}</td>
-            </tr>`;
-
-            // "Наличные оплаты" qatoridan keyin smena farqi haqida izoh qo'shamiz
-            if (r.name === 'Наличные оплаты' && data.shift_info) {
-              const si = data.shift_info;
-              if (si.hasOpenShift) {
-                html += `<tr><td colspan="4" class="shift-warn">
-                  ⚠ Smena hali yopilmagan — smena farqi hisobga olinmadi, natija to'liq aniq bo'lmasligi mumkin
-                </td></tr>`;
-              } else if (si.hasData && si.diff !== 0) {
-                const sign = si.diff > 0 ? '+' : '';
-                const shiftsText = si.shifts.map((s) =>
-                  `${Math.round(s.start).toLocaleString('ru-RU')} → ${Math.round(s.end).toLocaleString('ru-RU')}`
-                ).join(', ');
-                const explain = si.diff > 0
-                  ? 'filialda qoldirilgan pul, hisobga olindi'
-                  : "float'dan sarflangan, ayirildi";
-                html += `<tr><td colspan="4" class="shift-note">
-                  ↳ Тоза + Rasxod + Инкассация + Smena farqi: <b>${shiftsText} = ${sign}${Math.round(si.diff).toLocaleString('ru-RU')}</b> (${explain})
-                </td></tr>`;
-              }
-            }
-
-            return html;
-          }).join('');
-          tbody.innerHTML = rowsHtml;
-        }
-      } catch (e) {
-        lockedEl.style.display = 'block';
-        unlockedEl.style.display = 'none';
-        subEl.textContent = 'Solishtirish uchun avval ma\'lumot yuboring.';
-      }
-    }
-
-    async function submitForm() {
-      const spot_id = document.getElementById('spot_id').value;
-      const date = document.getElementById('entry_date').value;
-      if (!spot_id || !date) {
-        showToast('Filial va sanani tanlang', true);
-        return;
-      }
-      const { expenses, banknotes, payment_types } = collectFormData();
-
-      try {
-        const res = await apiFetch('/cash/entry', {
-          method: 'POST',
-          body: JSON.stringify({ date, spot_id: Number(spot_id), expenses, banknotes, payment_types }),
-        });
-        showToast(res.message || 'Saqlandi');
-        document.getElementById('print-btn').style.display = 'inline-block';
-        currentEntryCreatedAt = new Date().toISOString();
-        await loadCompare();
-        await loadJournal();
-        await loadDiffJournal();
-      } catch (e) {
-        showToast('Xato: ' + e.message, true);
-      }
-    }
-
-    // Kassa hujjati uchun barcha ma'lumotlarni bir joyga yig'adi
-    // (ham oddiy pechat, ham USB orqali chop etish shundan foydalanadi).
-    function gatherReceiptData() {
-      const spot_id = document.getElementById('spot_id').value;
-      const date = document.getElementById('entry_date').value;
-      const { totalExpense, totalToza, totalPay, total } = recalc();
-
-      const expenses = [];
-      document.querySelectorAll('#expense-body tr').forEach((tr) => {
-        const name = tr.querySelector('.exp-name').value.trim();
-        const amount = parseMoneyInput(tr.querySelector('.exp-amount'));
-        if (name && amount > 0) expenses.push({ name, amount });
-      });
-
-      const banknotes = BANKNOTES.map((v) => {
-        const el = document.querySelector(`.bn-count[data-value="${v}"]`);
-        return { value: v, count: el ? (Number(el.value) || 0) : 0 };
-      });
-
-      const paytypes = PAYTYPES.map((p) => {
-        const el = document.querySelector(`.pt-amount[data-name="${p}"]`);
-        return { name: p, amount: el ? parseMoneyInput(el) : 0 };
-      });
-
-      return {
-        spotName: spotsById[spot_id] || '',
-        date, expenses, banknotes, paytypes,
-        totalExpense, totalToza, total,
-      };
-    }
-
-    function preparePrint() {
-      const data = gatherReceiptData();
-      const fmtPrint = (n) => Math.round(n).toLocaleString('ru-RU');
-
-      document.getElementById('pp-spot').textContent = data.spotName;
-      document.getElementById('pp-date').textContent = data.date;
-      document.getElementById('pp-total-kassa-cell').textContent = fmtPrint(data.total);
-
-      const expenseTable = document.getElementById('pp-expense-table');
-      if (data.expenses.length) {
-        expenseTable.style.display = '';
-        document.getElementById('pp-expense-body').innerHTML = data.expenses.map(
-          (e) => `<tr><td>${e.name}</td><td>${fmtPrint(e.amount)}</td></tr>`
-        ).join('');
-      } else {
-        expenseTable.style.display = 'none';
-      }
-
-      document.getElementById('pp-banknote-body').innerHTML = data.banknotes.map(
-        (b) => `<tr><td>${b.value.toLocaleString('ru-RU')} so'mlik</td><td>${b.count}</td></tr>`
-      ).join('');
-
-      document.getElementById('pp-paytype-body').innerHTML = data.paytypes.map(
-        (p) => `<tr><td>${p.name}</td><td>${fmtPrint(p.amount)}</td></tr>`
-      ).join('');
-
-      document.getElementById('pp-total-expense-cell').textContent = fmtPrint(data.totalExpense);
-      document.getElementById('pp-toza-cell').textContent = fmtPrint(data.totalToza);
-
-      const preview = document.getElementById('print-preview');
-      preview.classList.add('show');
-      window.print();
-    }
-
-    // --- USB orqali to'g'ridan-to'g'ri chop etish (WebUSB, ESC/POS) ---
-
-    async function handlePairPrinter() {
-      try {
-        await pairPrinter();
-        showToast('Printer ulandi! Endi "USB orqali chop etish" tugmasidan foydalanishingiz mumkin.');
-        document.getElementById('usb-print-btn').style.display = 'inline-block';
-      } catch (e) {
-        if (e.name === 'NotFoundError') {
-          showToast('Printer tanlanmadi', true);
-        } else {
-          showToast('Ulanishda xato: ' + e.message, true);
-        }
-      }
-    }
-
-    async function handleUsbPrint() {
-      const data = gatherReceiptData();
-      const btn = document.getElementById('usb-print-btn');
-      const originalText = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = 'Chop etilmoqda...';
-
-      try {
-        await printReceiptAsImage(data);
-        showToast('Chek printerga yuborildi');
-      } catch (e) {
-        showToast('USB orqali chop etishda xato: ' + e.message, true);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = originalText;
-      }
-    }
-
-    async function loadJournal() {
-      const spot_id = document.getElementById('spot_id').value;
-      if (!spot_id) return;
-      const section = document.getElementById('journal-section');
-      document.getElementById('journal-spot-name').textContent = spotsById[spot_id] || ('#' + spot_id);
-
-      const today = todayStr();
-      const monthAgo = new Date();
-      monthAgo.setDate(monthAgo.getDate() - 30);
-      const from = monthAgo.toISOString().slice(0, 10);
-
-      try {
-        const data = await apiFetch(`/cash/journal?spot_id=${spot_id}&date_from=${from}&date_to=${today}`);
-        const tbody = document.getElementById('journal-body');
-        const emptyEl = document.getElementById('journal-empty');
-        tbody.innerHTML = '';
-
-        if (!data.entries.length) {
-          emptyEl.style.display = 'block';
-          return;
-        }
-        emptyEl.style.display = 'none';
-
-        data.entries.forEach((e) => {
-          const tr = document.createElement('tr');
-          tr.className = 'journal-row-clickable';
-          tr.innerHTML = `
-            <td>${e.date}</td>
-            <td>${formatMoney(e.toza)}</td>
-            <td>${formatMoney(e.total_expense)}</td>
-            <td>${formatMoney(e.total_paytypes)}</td>
-            <td><b>${formatMoney(e.total_amount)}</b></td>
-          `;
-          tr.addEventListener('click', () => {
-            document.getElementById('entry_date').value = e.date;
-            loadEntry();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          });
-          tbody.appendChild(tr);
-        });
-      } catch (e) {
-        showToast('Jurnalni yuklashda xato: ' + e.message, true);
-      }
-    }
-
-    async function loadDiffJournal() {
-      const spot_id = document.getElementById('spot_id').value;
-      if (!spot_id) return;
-      document.getElementById('diff-journal-spot-name').textContent = spotsById[spot_id] || ('#' + spot_id);
-
-      const today = todayStr();
-      const monthAgo = new Date();
-      monthAgo.setDate(monthAgo.getDate() - 30);
-      const from = monthAgo.toISOString().slice(0, 10);
-
-      try {
-        const data = await apiFetch(`/cash/diff-journal?spot_id=${spot_id}&date_from=${from}&date_to=${today}`);
-        const tbody = document.getElementById('diff-journal-body');
-        const emptyEl = document.getElementById('diff-journal-empty');
-        tbody.innerHTML = '';
-
-        if (!data.entries.length) {
-          emptyEl.style.display = 'block';
-          return;
-        }
-        emptyEl.style.display = 'none';
-
-        tbody.innerHTML = data.entries.map((e) => {
-          if (e.locked) {
-            return `<tr>
-              <td>${e.date}</td>
-              <td colspan="3" style="color:var(--text-dim);">Hali qulflangan</td>
-              <td><span class="badge neutral">Kutilmoqda</span></td>
-            </tr>`;
-          }
-          const diffClass = Math.abs(e.diff) < 1000 ? 'diff-pos' : 'diff-neg';
-          const diffText = (e.diff > 0 ? '+' : '') + Math.round(e.diff).toLocaleString('ru-RU');
-          return `<tr>
-            <td>${e.date}</td>
-            <td>${formatMoney(e.fakt)}</td>
-            <td style="color:var(--text-dim);">${formatMoney(e.poster)}</td>
-            <td class="${diffClass}">${diffText}</td>
-            <td>${Math.abs(e.diff) < 1000
-              ? '<span class="badge ok">Mos</span>'
-              : '<span class="badge bad">Farq bor</span>'}</td>
-          </tr>`;
-        }).join('');
-      } catch (e) {
-        showToast('Farq jurnalini yuklashda xato: ' + e.message, true);
-      }
-    }
-
-    async function exportExcel() {
-      const spot_id = document.getElementById('spot_id').value;
-      const today = todayStr();
-      const monthAgo = new Date();
-      monthAgo.setDate(monthAgo.getDate() - 30);
-      const from = monthAgo.toISOString().slice(0, 10);
-
-      try {
-        const token = getToken();
-        const res = await fetch(`/api/cash/export?spot_id=${spot_id}&date_from=${from}&date_to=${today}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) throw new Error('Yuklab bo\'lmadi');
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `kassa-${from}_${today}.xlsx`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-      } catch (e) {
-        showToast('Excel eksportida xato: ' + e.message, true);
-      }
-    }
-
-    document.getElementById('add-expense-btn').addEventListener('click', () => addExpenseRow());
-    document.getElementById('load-btn').addEventListener('click', loadEntry);
-    document.getElementById('submit-btn').addEventListener('click', submitForm);
-    document.getElementById('print-btn').addEventListener('click', preparePrint);
-    document.getElementById('usb-pair-btn').addEventListener('click', handlePairPrinter);
-    document.getElementById('usb-print-btn').addEventListener('click', handleUsbPrint);
-    document.getElementById('export-btn').addEventListener('click', exportExcel);
-    document.getElementById('spot_id').addEventListener('change', () => { loadEntry(); loadJournal(); loadDiffJournal(); });
-
-    let selectedBdrSpots = [];
-
-    function renderBdrChips() {
-      const box = document.getElementById('bdr-ms-box');
-      if (!selectedBdrSpots.length) {
-        box.innerHTML = '<span class="ms-placeholder">Barchasi (ruxsatingiz bor filiallar)</span>';
-        return;
-      }
-      box.innerHTML = selectedBdrSpots.map((id) => `
-        <span class="ms-chip" data-spot="${id}">${spotsById[id] || id} <span class="x" data-remove="${id}">&times;</span></span>
-      `).join('');
-      box.querySelectorAll('.x').forEach((x) => {
-        x.addEventListener('click', (e) => {
-          e.stopPropagation();
-          selectedBdrSpots = selectedBdrSpots.filter((id) => id !== Number(x.dataset.remove));
-          renderBdrChips();
-          renderBdrDropdown();
-        });
-      });
-    }
-
-    function renderBdrDropdown() {
-      const dropdown = document.getElementById('bdr-ms-dropdown');
-      const options = Array.from(document.getElementById('spot_id').options).filter((o) => o.value !== '');
-      dropdown.innerHTML = options.map((o) => `
-        <label class="ms-option">
-          <input type="checkbox" value="${o.value}" ${selectedBdrSpots.includes(Number(o.value)) ? 'checked' : ''}>
-          ${o.textContent}
-        </label>
-      `).join('');
-      dropdown.querySelectorAll('input').forEach((cb) => {
-        cb.addEventListener('change', () => {
-          const id = Number(cb.value);
-          if (cb.checked) selectedBdrSpots.push(id);
-          else selectedBdrSpots = selectedBdrSpots.filter((x) => x !== id);
-          renderBdrChips();
-        });
-      });
-    }
-
-    document.getElementById('bdr-ms-box').addEventListener('click', () => {
-      document.getElementById('bdr-ms-dropdown').classList.toggle('open');
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/nav.js"></script>
+<script src="js/escpos.js"></script>
+<script>
+  const DENOMS = [200000, 100000, 50000, 20000, 10000, 5000, 2000, 1000];
+  let currentUser = null;
+  let currentEntry = null;
+  let paymentTypes = [];
+  let currentDate = null;
+
+  function renderRasxod(rasxod) {
+    const labels = [['avans', 'Avans'], ['ofitsant', 'Ofitsant'], ['texnichka', 'Texnichka'], ['prochiy', 'Prochiy'], ['bozorlik', 'Bozorlik']];
+    document.getElementById('rasxod-rows').innerHTML = labels.map(([key, label]) => `
+      <div style="display:grid;grid-template-columns:1fr 130px;padding:7px 10px;border-bottom:1px solid #efeee8;">
+        <span style="font-size:13px;">${label}</span><span style="text-align:right;font-size:13px;">${fmtMoney(rasxod[key])}</span>
+      </div>`).join('');
+    document.getElementById('rasxod-total').textContent = `${fmtMoney(rasxod.total)} so'm`;
+  }
+
+  function renderDenoms(values) {
+    const half = Math.ceil(DENOMS.length / 2);
+    const cols = [DENOMS.slice(0, half), DENOMS.slice(half)];
+    document.getElementById('denom-grid').innerHTML = cols.map((col) => `
+      <div>${col.map((d) => `
+        <div class="field-row"><span style="font-size:13px;">${fmtMoney(d)} so'mlik</span>
+        <input type="text" class="field-input denom-input" data-denom="${d}" value="${values[d] || ''}"></div>
+      `).join('')}</div>`).join('');
+    document.querySelectorAll('.denom-input').forEach((inp) => inp.addEventListener('input', () => {
+      inp.value = inp.value.replace(/[^\d]/g, '');
+      recompute();
+    }));
+  }
+
+  function renderPayments(paymentAmounts) {
+    const half = Math.ceil(paymentTypes.length / 2);
+    const cols = [paymentTypes.slice(0, half), paymentTypes.slice(half)];
+    document.getElementById('payment-grid').innerHTML = cols.map((col) => `
+      <div>${col.map((p) => `
+        <div class="field-row"><span style="font-size:13px;">${p.name}</span>
+        <input type="text" class="field-input pay-input" data-id="${p.id}" data-group="${p.group_type}" value="${paymentAmounts[p.id] ? fmtMoney(paymentAmounts[p.id]) : ''}"></div>
+      `).join('')}</div>`).join('');
+    document.querySelectorAll('.pay-input').forEach((inp) => { attachMoneyMask(inp); inp.addEventListener('input', recompute); });
+  }
+
+  function recompute() {
+    const denomVals = {};
+    let toza = 0;
+    document.querySelectorAll('.denom-input').forEach((inp) => {
+      const c = Number(inp.value) || 0;
+      denomVals[inp.dataset.denom] = c;
+      toza += c * Number(inp.dataset.denom);
     });
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.multiselect')) {
-        document.getElementById('bdr-ms-dropdown').classList.remove('open');
+    document.getElementById('toza-total').textContent = `${fmtMoney(toza)} so'm`;
+
+    const paymentAmounts = {};
+    let paymentsTotal = 0;
+    document.querySelectorAll('.pay-input').forEach((inp) => {
+      const v = moneyValue(inp);
+      paymentAmounts[inp.dataset.id] = v;
+      paymentsTotal += v;
+    });
+    document.getElementById('payments-total').textContent = `${fmtMoney(paymentsTotal)} so'm`;
+
+    const rasxodTotal = currentEntry ? currentEntry.rasxod.total : 0;
+    const jami = toza + rasxodTotal + paymentsTotal;
+
+    document.getElementById('sum-toza').textContent = `${fmtMoney(toza)} so'm`;
+    document.getElementById('sum-rasxod').textContent = `${fmtMoney(rasxodTotal)} so'm`;
+    document.getElementById('sum-payments').textContent = `${fmtMoney(paymentsTotal)} so'm`;
+    document.getElementById('sum-jami').textContent = `${fmtMoney(jami)} so'm`;
+
+    return { denominations: denomVals, toza_naqd: toza, payment_amounts: paymentAmounts };
+  }
+
+  function compareRow(label, fakt, poster, bold) {
+    const farq = fakt - poster;
+    const color = Math.abs(farq) < 1 ? 'var(--green-fg)' : 'var(--red-fg)';
+    return `<tr><td class="j" style="${bold ? 'font-weight:700;' : ''}">${label}</td>
+      <td class="j" style="text-align:right;${bold ? 'font-weight:700;' : ''}">${fmtMoney(fakt)}</td>
+      <td class="j" style="text-align:right;${bold ? 'font-weight:700;' : ''}">${fmtMoney(poster)}</td>
+      <td class="j" style="text-align:right;font-weight:700;color:${color};">${farq >= 0 ? '+' : ''}${fmtMoney(farq)}</td></tr>`;
+  }
+
+  function renderCompare(compare) {
+    document.getElementById('compare-card').style.display = 'block';
+    document.getElementById('lock-note').style.display = 'none';
+    const pct = compare.farq_percent.toFixed(2);
+    const badge = compare.farq_percent <= 1
+      ? '<span class="pill pill-green">Farq me\'yorida</span>'
+      : '<span class="pill pill-amber">Farq katta</span>';
+    let html = `<div style="margin:4px 0 10px 0;">${badge} <span style="font-size:10.5px;color:var(--muted);">(farq: ${pct}%, chegara: 1%)</span></div>`;
+    html += `<table style="width:100%;border-collapse:collapse;"><thead><tr><th class="j">Bo'lim</th><th class="j" style="text-align:right;">Fakt</th><th class="j" style="text-align:right;">Poster</th><th class="j" style="text-align:right;">Farq</th></tr></thead><tbody>`;
+    html += compareRow('Umumiy kassa', compare.umumiy.fakt, compare.umumiy.poster, true);
+    html += compareRow('Наличные оплаты', compare.nalichnie.fakt, compare.nalichnie.poster, false);
+    html += `<tr><td class="j" colspan="4" style="font-size:10.5px;color:var(--purple);background:#f7f5fa;">↳ Тоза+Rasxod+Инкассация+Smena farqi: ${fmtMoney(compare.smena_open)}→${fmtMoney(compare.smena_close)} = ${compare.smena_farqi >= 0 ? '+' : ''}${fmtMoney(compare.smena_farqi)}</td></tr>`;
+    html += compareRow('Безналичные оплаты', compare.beznal.fakt, compare.beznal.poster, false);
+    compare.beznal.cards.forEach((c) => {
+      html += `<tr><td class="j" style="padding-left:18px;color:var(--muted);">${c.name}</td><td class="j" style="text-align:right;">${fmtMoney(c.fakt)}</td><td class="j" style="text-align:right;">${fmtMoney(c.poster)}</td><td class="j" style="text-align:right;">${fmtMoney(c.fakt - c.poster)}</td></tr>`;
+    });
+    html += compareRow('Сертификат', compare.sertifikat.fakt, compare.sertifikat.poster, false);
+    html += `</tbody></table>`;
+    document.getElementById('compare-body').innerHTML = html;
+  }
+
+  async function loadCompareIfSubmitted(entry) {
+    if (!entry.submitted_at) { document.getElementById('compare-card').style.display = 'none'; document.getElementById('lock-note').style.display = 'none'; return; }
+    try {
+      const { compare } = await api(`/cash/${currentDate}/poster-compare`);
+      renderCompare(compare);
+    } catch (e) {
+      document.getElementById('compare-card').style.display = 'none';
+      document.getElementById('lock-note').style.display = 'block';
+      document.getElementById('lock-note').innerHTML = `<div style="font-size:12.5px;color:var(--amber-fg);">${e.message}</div>`;
+    }
+  }
+
+  function applyLockState(entry) {
+    const locked = entry.submitted_at && currentUser.role !== 'admin';
+    document.querySelectorAll('.denom-input, .pay-input').forEach((el) => { el.disabled = locked; });
+    document.getElementById('submit-btn').style.display = entry.submitted_at ? 'none' : 'block';
+  }
+
+  async function refreshEntry() {
+    const { entry, payment_types } = await api(`/cash?date=${currentDate}`);
+    currentEntry = entry;
+    paymentTypes = payment_types;
+    renderRasxod(entry.rasxod);
+    renderDenoms(entry.denominations || {});
+    renderPayments(entry.payment_amounts || {});
+    recompute();
+    applyLockState(entry);
+    await loadCompareIfSubmitted(entry);
+  }
+
+  async function warnIfEmpty() {
+    const rasxod = currentEntry.rasxod;
+    const isEmpty = rasxod.total === 0;
+    if (!isEmpty) return true;
+    for (let i = 1; i <= 3; i++) {
+      const ok = confirm(`Diqqat (${i}/3) — ${currentDate} kuni uchun Bozorlik va Xarajatlarda hech qanday yozuv yo'q.\nAgar haqiqatan ham bo'lmagan bo'lsa OK bosing, aks holda Bekor qiling va avval o'sha bo'limlarga kiriting.`);
+      if (!ok) return false;
+    }
+    return true;
+  }
+
+  (async () => {
+    currentUser = await bootPage();
+    if (!currentUser) return;
+    const isAdminOrCurator = currentUser.role === 'admin' || currentUser.role === 'curator';
+
+    const today = await api('/dashboard/summary').then((s) => s.business_date);
+    const urlDate = new URLSearchParams(window.location.search).get('date');
+    currentDate = (urlDate && isAdminOrCurator) ? urlDate : today;
+    document.getElementById('date-input').value = currentDate;
+    document.getElementById('date-input').disabled = !isAdminOrCurator;
+    document.getElementById('date-hint').textContent = isAdminOrCurator
+      ? "Ish kuni 05:00–05:00 · eski sanaga kirita olasiz"
+      : 'Ish kuni 05:00–05:00';
+
+    document.getElementById('date-input').addEventListener('change', async (e) => {
+      currentDate = e.target.value;
+      await refreshEntry();
+    });
+
+    await refreshEntry();
+
+    document.getElementById('submit-btn').addEventListener('click', async () => {
+      const errBox = document.getElementById('err');
+      errBox.style.display = 'none';
+      const payload = recompute();
+      try {
+        await api('/cash', { method: 'PUT', body: { ...payload, business_date: currentDate } });
+        const okToContinue = await warnIfEmpty();
+        if (!okToContinue) return;
+        await api('/cash/submit', { method: 'POST', body: { business_date: currentDate } });
+        await refreshEntry();
+      } catch (e) {
+        errBox.textContent = e.message;
+        errBox.style.display = 'block';
       }
     });
 
-    async function loadBranchDiffReport() {
-      const date_from = document.getElementById('bdr-from').value;
-      const date_to = document.getElementById('bdr-to').value;
+    let saveTimer = null;
+    document.querySelector('.main').addEventListener('input', (e) => {
+      if (!e.target.matches('.denom-input, .pay-input')) return;
+      if (currentEntry && currentEntry.submitted_at && currentUser.role !== 'admin') return;
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(async () => {
+        const payload = recompute();
+        try { await api('/cash', { method: 'PUT', body: { ...payload, business_date: currentDate } }); } catch (e) { /* jim saqlanadi */ }
+      }, 600);
+    });
 
-      const params = new URLSearchParams({ date_from, date_to });
-      if (selectedBdrSpots.length) params.set('spot_ids', selectedBdrSpots.join(','));
+    document.getElementById('print-btn').addEventListener('click', async () => {
+      const { entry } = await api(`/cash?date=${currentDate}`);
+      await printCashReceipt(entry, paymentTypes, document.getElementById('printer-status'));
+    });
 
-      try {
-        const data = await apiFetch('/cash/branch-diff-report?' + params.toString());
-        const tbody = document.getElementById('bdr-body');
-        const emptyEl = document.getElementById('bdr-empty');
-
-        if (!data.rows.length) {
-          tbody.innerHTML = '';
-          emptyEl.style.display = 'block';
-          return;
-        }
-        emptyEl.style.display = 'none';
-
-        tbody.innerHTML = data.rows.map((r) => {
-          const cls = r.total_diff === 0 ? 'diff-pos' : 'diff-neg';
-          const clsAvg = r.avg_diff === 0 ? 'diff-pos' : 'diff-neg';
-          const fmt = (v) => (v > 0 ? '+' : '') + v.toLocaleString('ru-RU');
-          return `<tr>
-            <td><b>${spotsById[r.spot_id] || r.spot_id}</b></td>
-            <td style="text-align:right;" class="${cls}">${fmt(r.total_diff)}</td>
-            <td style="text-align:right;" class="${clsAvg}">${fmt(r.avg_diff)}</td>
-          </tr>`;
-        }).join('');
-      } catch (e) {
-        showToast('Hisobotni yuklashda xato: ' + e.message, true);
-      }
-    }
-
-    document.getElementById('bdr-btn').addEventListener('click', loadBranchDiffReport);
-
-    (async function init() {
-      document.getElementById('entry_date').value = todayStr();
-      buildBanknoteGrid();
-      buildPaytypeGrid();
-      addExpenseRow();
-      attachMoneyFormatting();
-
-      const user = getUser();
-      if (!user || user.role !== 'admin') {
-        document.getElementById('export-btn').style.display = 'none';
-      }
-
-      if (!isWebUSBSupported()) {
-        document.getElementById('usb-pair-btn').style.display = 'none';
-      } else {
-        try {
-          const existing = await navigator.usb.getDevices();
-          if (existing.length > 0) {
-            document.getElementById('usb-print-btn').style.display = 'inline-block';
-          }
-        } catch (e) {
-          // e'tiborsiz qoldiramiz
-        }
-      }
-
-      await loadSpots();
-      recalc();
-      await loadEntry();
-      await loadJournal();
-      await loadDiffJournal();
-
-      renderBdrDropdown();
-      const bdrToday = todayStr();
-      document.getElementById('bdr-from').value = bdrToday;
-      document.getElementById('bdr-to').value = bdrToday;
-      await loadBranchDiffReport();
-    })();
-  </script>
+    document.getElementById('printer-status').textContent = navigator.usb
+      ? 'USB printerga ulanish uchun bosing'
+      : "Brauzer WebUSB'ni qo'llab-quvvatlamaydi";
+    if (!navigator.usb) document.getElementById('print-btn').disabled = true;
+  })();
+</script>
 </body>
 </html>

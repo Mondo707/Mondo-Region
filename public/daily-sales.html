@@ -1,173 +1,279 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="uz">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kunlik savdo — Mondo Region</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="css/style.css">
-<link rel="icon" href="assets/logo.png">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kunlik savdo — KPI Bonus</title>
+<script>(function(){var t=localStorage.getItem('kpi_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .multiselect { position: relative; }
+  .ms-box {
+    min-width: 240px;
+    min-height: 40px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    cursor: pointer;
+  }
+  .ms-chip {
+    background: rgba(245,197,24,0.15);
+    color: var(--accent);
+    border: 1px solid var(--accent-dark);
+    border-radius: 999px;
+    padding: 3px 8px 3px 12px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .ms-chip .x { cursor:pointer; opacity:0.7; font-weight:700; }
+  .ms-chip .x:hover { opacity:1; color: var(--danger); }
+  .ms-placeholder { color: var(--text-dim); font-size: 13px; }
+  .ms-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: 280px;
+    max-height: 280px;
+    overflow-y: auto;
+    background: var(--card);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    z-index: 20;
+    padding: 6px;
+    display: none;
+  }
+  .ms-dropdown.open { display: block; }
+  .ms-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .ms-option:hover { background: var(--card-hover); }
+  .ms-option input { margin: 0; }
+</style>
 </head>
 <body>
-<div class="app-shell">
-  <div class="sidebar" id="sidebar-root"></div>
-  <div class="main">
-    <div style="display:flex;align-items:baseline;justify-content:space-between;">
-      <div class="page-title">Kunlik savdo</div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span style="font-size:11.5px;color:var(--muted);">Dan</span>
-        <input type="date" id="ds-from">
-        <span style="font-size:11.5px;color:var(--muted);">Gacha</span>
-        <input type="date" id="ds-to">
-        <a id="ds-export" href="#"><button style="font-size:11.5px;padding:7px 12px;">📊 Excel</button></a>
+  <div class="container">
+    <div class="filters">
+      <div class="field">
+        <label for="date_from">Sanadan</label>
+        <input type="date" id="date_from">
       </div>
+      <div class="field">
+        <label for="date_to">Sanagacha</label>
+        <input type="date" id="date_to">
+      </div>
+      <div class="field">
+        <label for="spot_id">Filial</label>
+        <select id="spot_id">
+          <option value="">Barchasi</option>
+        </select>
+      </div>
+      <div class="field multiselect">
+        <label>Mahsulot kategoriyasi</label>
+        <div class="ms-box" id="ms-box">
+          <span class="ms-placeholder" id="ms-placeholder">Barchasi</span>
+        </div>
+        <div class="ms-dropdown" id="ms-dropdown"></div>
+      </div>
+      <button class="btn-primary apply-btn" id="apply-btn" style="max-width:140px;">Qo'llash</button>
     </div>
-    <div class="page-sub">Kategoriyalar bo'yicha sotilgan miqdor (dona)</div>
 
-    <div style="display:flex;gap:24px;align-items:flex-start;">
-      <div style="flex:1.5;">
-        <div id="chips" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;"></div>
-        <div class="card" style="padding:0;overflow:auto;">
-          <table id="sales-table"></table>
-        </div>
-        <div style="margin-top:10px;font-size:12px;color:var(--muted);">Har bir chekdagi mahsulot sonlari kategoriya bo'yicha yig'ilib, kunlik dona ko'rinishida ko'rsatiladi.</div>
+    <div class="section" id="matrix-section">
+      <h2 style="margin-top:0;">Kunlik savdo — <span id="matrix-period"></span></h2>
+      <p class="journal-sub">Har bir filial bo'yicha, har bir kategoriyadan qancha sotilgani (dona/kg). Bonus bu yerda hisobga olinmaydi.</p>
+      <div style="overflow-x:auto;">
+        <table id="matrix-table">
+          <thead><tr id="matrix-head"></tr></thead>
+          <tbody id="matrix-body"></tbody>
+        </table>
       </div>
-
-      <div id="mgmt-col" style="flex:1;display:none;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-          <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:16px;">Kategoriyalarni boshqarish</div>
-          <span class="badge badge-ac" style="position:static;">Curator huquqi</span>
-        </div>
-        <div class="card" style="margin-bottom:14px;">
-          <div id="cat-list" style="display:flex;flex-direction:column;gap:6px;"></div>
-          <div style="display:flex;gap:8px;margin-top:12px;">
-            <input type="text" id="new-cat-name" placeholder="Yangi kategoriya nomi">
-            <button class="btn" id="add-cat">Qo'shish</button>
-          </div>
-        </div>
-
-        <div class="card">
-          <div style="font-size:13px;font-weight:700;margin-bottom:10px;">Mahsulotni kategoriyaga bog'lash</div>
-          <div id="unmapped-list"></div>
-        </div>
-      </div>
+      <div class="empty-state" id="matrix-empty" style="display:none;">Bu davr uchun ma'lumot yo'q</div>
     </div>
   </div>
-</div>
 
-<script src="js/api.js"></script>
-<script src="js/nav.js"></script>
-<script>
-  let allCategories = [];
-  let selectedIds = [];
+  <script src="/js/api.js"></script>
+  <script src="/js/topbar.js"></script>
+  <script src="/js/categoryOrder.js"></script>
+  <script>
+    requireSection('daily_sales');
+    renderTopbar('sales');
 
-  async function loadTable() {
-    const from = document.getElementById('ds-from').value;
-    const to = document.getElementById('ds-to').value;
-    const catQ = selectedIds.length ? `&category_ids=${selectedIds.join(',')}` : '';
-    const q = `?from=${from}&to=${to}${catQ}`;
-    const { categories, selected_categories, table } = await api(`/daily-sales${q}`);
-    allCategories = categories;
-    if (!selectedIds.length) selectedIds = selected_categories.map((c) => c.id);
-    document.getElementById('ds-export').href = `/api/daily-sales/export/xlsx${q}`;
-    renderChips();
+    let spotsById = {};
+    let tiersConfig = {};
+    let selectedCategories = []; // bo'sh massiv = "Barchasi"
 
-    const head = `<thead><tr><th>Sana</th>${selected_categories.map((c) => `<th>${c.name} (dona)</th>`).join('')}<th>Jami (dona)</th></tr></thead>`;
-    const body = `<tbody>${table.map((row) => `
-      <tr><td>${row.business_date}</td>${selected_categories.map((c) => `<td>${row[c.id] || 0}</td>`).join('')}<td style="font-weight:700;">${row.total_quantity}</td></tr>
-    `).join('') || '<tr><td class="empty" colspan="10">Hali ma\'lumot yo\'q</td></tr>'}</tbody>`;
-    document.getElementById('sales-table').innerHTML = head + body;
-  }
-
-  function renderChips() {
-    document.getElementById('chips').innerHTML = allCategories.map((c) => `
-      <div class="chip ${selectedIds.includes(c.id) ? 'selected' : ''}" data-id="${c.id}">${c.name} ${selectedIds.includes(c.id) ? '✕' : ''}</div>
-    `).join('');
-    document.querySelectorAll('.chip').forEach((chip) => chip.addEventListener('click', () => {
-      const id = Number(chip.dataset.id);
-      selectedIds = selectedIds.includes(id) ? selectedIds.filter((x) => x !== id) : [...selectedIds, id];
-      loadTable();
-    }));
-  }
-
-  async function loadMgmt() {
-    function drawCatList() {
-      document.getElementById('cat-list').innerHTML = allCategories.map((c) => `
-        <div id="dsc-row-${c.id}" style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:8px;background:var(--paper);">
-          <span style="font-size:13px;">${c.name}</span>
-          <span><span class="btn-link" data-edit-cat="${c.id}">Tahrirlash</span> · <span class="btn-danger-text" data-del-cat="${c.id}" style="cursor:pointer;">O'chirish</span></span>
-        </div>`).join('');
-      document.querySelectorAll('[data-del-cat]').forEach((el) => el.addEventListener('click', async () => {
-        if (!confirm("O'chirilsinmi?")) return;
-        await api(`/admin/categories/${el.dataset.delCat}`, { method: 'DELETE' });
-        const { categories } = await api('/daily-sales?from=' + document.getElementById('ds-from').value + '&to=' + document.getElementById('ds-to').value);
-        allCategories = categories;
-        loadMgmt();
-        loadTable();
-      }));
-      document.querySelectorAll('[data-edit-cat]').forEach((el) => el.addEventListener('click', () => {
-        const c = allCategories.find((x) => x.id === Number(el.dataset.editCat));
-        document.getElementById(`dsc-row-${c.id}`).innerHTML = `
-          <input type="text" class="dsc-edit-name" value="${c.name}" style="flex:1;margin-right:8px;">
-          <span><span class="btn-link" data-save-cat="${c.id}">Saqlash</span> · <span class="btn-link" data-cancel-cat="${c.id}">Bekor</span></span>`;
-        document.querySelector(`[data-save-cat="${c.id}"]`).addEventListener('click', async () => {
-          const name = document.querySelector(`#dsc-row-${c.id} .dsc-edit-name`).value.trim();
-          if (!name) return;
-          await api(`/admin/categories/${c.id}`, { method: 'PUT', body: { name } });
-          const { categories } = await api('/daily-sales?from=' + document.getElementById('ds-from').value + '&to=' + document.getElementById('ds-to').value);
-          allCategories = categories;
-          loadMgmt();
-          loadTable();
-        });
-        document.querySelector(`[data-cancel-cat="${c.id}"]`).addEventListener('click', drawCatList);
-      }));
+    function setDefaultDates() {
+      const today = todayStr();
+      document.getElementById('date_from').value = today;
+      document.getElementById('date_to').value = today;
     }
-    drawCatList();
 
-    try {
-      const { products } = await api('/admin/categories/unmapped-products');
-      document.getElementById('unmapped-list').innerHTML = products.length ? products.map((p) => `
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #efeee8;">
-          <span style="font-size:13px;">${p.product_name}</span>
-          <select class="map-select" data-pid="${p.product_id}" data-pname="${p.product_name}">
-            <option value="">Kategoriya tanlang</option>
-            ${allCategories.map((c) => `<option value="${c.id}">${c.name}</option>`).join('')}
-          </select>
-        </div>`).join('') : '<div class="empty">Barcha mahsulotlar bog\'langan</div>';
-      document.querySelectorAll('.map-select').forEach((sel) => sel.addEventListener('change', async () => {
-        if (!sel.value) return;
-        await api('/admin/categories/map-product', { method: 'POST', body: { poster_product_id: sel.dataset.pid, product_name: sel.dataset.pname, category_id: Number(sel.value) } });
-        loadMgmt();
-      }));
-    } catch (e) { /* Poster mavjud bo'lmasa jim o'tkaziladi */ }
-  }
+    async function loadTiersConfig() {
+      try {
+        const data = await apiFetch('/bonus/tiers');
+        tiersConfig = data.categories;
+      } catch (e) {
+        showToast('Pog\'ona jadvalini yuklab bo\'lmadi: ' + e.message, true);
+      }
+    }
 
-  (async () => {
-    const user = await bootPage();
-    if (!user) return;
-    const today = await api('/dashboard/summary').then((s) => s.business_date);
-    document.getElementById('ds-to').value = today;
-    document.getElementById('ds-from').value = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
-    document.getElementById('ds-from').addEventListener('change', loadTable);
-    document.getElementById('ds-to').addEventListener('change', loadTable);
+    async function loadSpots() {
+      try {
+        const data = await apiFetch('/spots');
+        const select = document.getElementById('spot_id');
+        data.spots.forEach((s) => {
+          spotsById[s.spot_id] = s.name;
+          const opt = document.createElement('option');
+          opt.value = s.spot_id;
+          opt.textContent = s.name;
+          select.appendChild(opt);
+        });
+      } catch (e) {
+        showToast('Filiallarni yuklab bo\'lmadi: ' + e.message, true);
+      }
+    }
 
-    await loadTable();
-
-    const canManage = user.role === 'admin' || user.role === 'curator';
-    if (canManage) {
-      document.getElementById('mgmt-col').style.display = 'block';
-      loadMgmt();
-      document.getElementById('add-cat').addEventListener('click', async () => {
-        const input = document.getElementById('new-cat-name');
-        if (!input.value.trim()) return;
-        await api('/admin/categories', { method: 'POST', body: { name: input.value.trim() } });
-        input.value = '';
-        const { categories } = await api('/daily-sales?from=' + document.getElementById('ds-from').value + '&to=' + document.getElementById('ds-to').value);
-        allCategories = categories;
-        loadMgmt();
+    // --- Ko'p tanlovli kategoriya (multi-select "chip") ---
+    function renderMsChips() {
+      const box = document.getElementById('ms-box');
+      if (!selectedCategories.length) {
+        box.innerHTML = '<span class="ms-placeholder">Barchasi</span>';
+        return;
+      }
+      box.innerHTML = selectedCategories.map((c) => `
+        <span class="ms-chip" data-cat="${c}">${c} <span class="x" data-remove="${c}">&times;</span></span>
+      `).join('');
+      box.querySelectorAll('.x').forEach((x) => {
+        x.addEventListener('click', (e) => {
+          e.stopPropagation();
+          selectedCategories = selectedCategories.filter((c) => c !== x.dataset.remove);
+          renderMsChips();
+          renderMsDropdown();
+        });
       });
     }
-  })();
-</script>
+
+    function renderMsDropdown() {
+      const dropdown = document.getElementById('ms-dropdown');
+      dropdown.innerHTML = CATEGORY_ORDER.map((c) => `
+        <label class="ms-option">
+          <input type="checkbox" value="${c}" ${selectedCategories.includes(c) ? 'checked' : ''}>
+          ${c}
+        </label>
+      `).join('');
+      dropdown.querySelectorAll('input').forEach((cb) => {
+        cb.addEventListener('change', () => {
+          if (cb.checked) {
+            selectedCategories.push(cb.value);
+          } else {
+            selectedCategories = selectedCategories.filter((c) => c !== cb.value);
+          }
+          renderMsChips();
+        });
+      });
+    }
+
+    document.getElementById('ms-box').addEventListener('click', () => {
+      document.getElementById('ms-dropdown').classList.toggle('open');
+    });
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.multiselect')) {
+        document.getElementById('ms-dropdown').classList.remove('open');
+      }
+    });
+
+    // Filial vertikal (qatorlar), kategoriya gorizontal (ustunlar). Davr bo'yicha
+    // miqdorlar yig'ib (summalab) ko'rsatiladi - bitta kun ham, bir necha kun ham bo'lishi mumkin.
+    async function loadMatrix() {
+      const date_from = document.getElementById('date_from').value;
+      const date_to = document.getElementById('date_to').value;
+      const spot_id = document.getElementById('spot_id').value;
+
+      const params = new URLSearchParams({ date_from, date_to });
+      if (spot_id) params.set('spot_id', spot_id);
+      if (selectedCategories.length) params.set('categories', selectedCategories.join(','));
+
+      try {
+        const data = await apiFetch('/bonus?' + params.toString());
+
+        document.getElementById('matrix-period').textContent =
+          date_from === date_to ? date_from : `${date_from} — ${date_to}`;
+
+        // Ustunlar: agar kategoriya(lar) tanlangan bo'lsa faqat o'shalar, aks holda
+        // belgilangan tartibda hammasini ko'rsatamiz.
+        const allCats = sortByCategoryOrder(Object.keys(tiersConfig));
+        const categories = selectedCategories.length
+          ? sortByCategoryOrder(selectedCategories)
+          : allCats;
+
+        // Qatorlar: agar filial tanlangan bo'lsa faqat o'shani, aks holda
+        // foydalanuvchi ko'ra oladigan barcha filiallarni.
+        const allSpotOptions = Array.from(document.getElementById('spot_id').options)
+          .filter((o) => o.value !== '')
+          .map((o) => Number(o.value));
+        const spotIds = spot_id ? [Number(spot_id)] : allSpotOptions;
+
+        const emptyEl = document.getElementById('matrix-empty');
+        if (!spotIds.length) {
+          document.getElementById('matrix-head').innerHTML = '';
+          document.getElementById('matrix-body').innerHTML = '';
+          emptyEl.style.display = 'block';
+          return;
+        }
+        emptyEl.style.display = 'none';
+
+        // spot_id + category -> davr bo'yicha yig'ilgan miqdor
+        const qtyMap = new Map();
+        data.rows.forEach((r) => {
+          const key = `${r.spot_id}::${r.category}`;
+          qtyMap.set(key, (qtyMap.get(key) || 0) + r.quantity);
+        });
+
+        const head = document.getElementById('matrix-head');
+        head.innerHTML = '<th>Filial</th>' + categories.map((c) => {
+          const cfg = tiersConfig[c];
+          const unit = cfg && cfg.unit === 'kg' ? ' (kg)' : '';
+          return `<th>${c}${unit}</th>`;
+        }).join('');
+
+        const body = document.getElementById('matrix-body');
+        body.innerHTML = spotIds.map((sId) => {
+          const cells = categories.map((c) => {
+            const qty = qtyMap.get(`${sId}::${c}`);
+            const display = qty ? (Math.round(qty * 100) / 100) : '—';
+            return `<td>${display}</td>`;
+          }).join('');
+          return `<tr><td><b>${spotsById[sId] || ('#' + sId)}</b></td>${cells}</tr>`;
+        }).join('');
+      } catch (e) {
+        showToast('Ma\'lumot yuklashda xato: ' + e.message, true);
+      }
+    }
+
+    document.getElementById('apply-btn').addEventListener('click', loadMatrix);
+
+    (async function init() {
+      setDefaultDates();
+      renderMsChips();
+      renderMsDropdown();
+      await loadTiersConfig();
+      await loadSpots();
+      await loadMatrix();
+    })();
+  </script>
 </body>
 </html>
